@@ -15,7 +15,7 @@ const gamePanel = document.getElementById("game");
 const serverUrlInput = document.getElementById("serverUrl");
 const playerIdSelect = document.getElementById("playerId");
 const gameModeSelect = document.getElementById("gameMode");
-const difficultyGroup = document.getElementById("difficultyGroup");
+const difficultySection = document.getElementById("difficultySection");
 const aiDifficultySlider = document.getElementById("aiDifficulty");
 const difficultyValue = document.getElementById("difficultyValue");
 const connectBtn = document.getElementById("connectBtn");
@@ -35,16 +35,11 @@ aiDifficultySlider.addEventListener("input", updateDifficultyDisplay);
 
 function updateModeUI() {
     gameMode = gameModeSelect.value;
-    if (gameMode === "vs_ai") {
-        difficultyGroup.classList.add("visible");
-    } else {
-        difficultyGroup.classList.remove("visible");
-    }
 }
 
 function updateDifficultyDisplay() {
     aiDifficulty = parseInt(aiDifficultySlider.value);
-    difficultyValue.textContent = aiDifficulty;
+    difficultyValue.textContent = "Level " + aiDifficulty;
 }
 
 function connect() {
@@ -73,6 +68,14 @@ function connect() {
         setupPanel.classList.add("hidden");
         gamePanel.classList.remove("hidden");
         readyBtn.classList.remove("hidden");
+        
+        // Show/hide AI difficulty slider based on mode
+        if (gameMode === "vs_ai") {
+            difficultySection.classList.add("visible");
+        } else {
+            difficultySection.classList.remove("visible");
+        }
+        
         setStatus("Connected! Click Ready to start.", "connected");
     };
 

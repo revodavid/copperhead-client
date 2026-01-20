@@ -30,10 +30,6 @@
                     <option value="two_player">Two Player (PvP)</option>
                 </select>
             </div>
-            <div class="form-group" id="difficultyGroup" class="visible">
-                <label for="aiDifficulty">AI Difficulty: <span id="difficultyValue">5</span></label>
-                <input type="range" id="aiDifficulty" min="1" max="10" value="5">
-            </div>
             <button id="connectBtn">Connect</button>
         </div>
 
@@ -43,6 +39,11 @@
                 <canvas id="gameCanvas"></canvas>
                 <div id="instructions">
                     <h3>🎮 How to Play</h3>
+                    <div class="instruction-section" id="difficultySection">
+                        <h4>AI Difficulty</h4>
+                        <input type="range" id="aiDifficulty" min="1" max="10" value="5">
+                        <div id="difficultyValue">Level 5</div>
+                    </div>
                     <div class="instruction-section">
                         <h4>Goal</h4>
                         <p id="goal-text">Eat food to grow your snake and increase your score. Don't hit the walls or yourself!</p>
