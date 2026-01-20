@@ -5,7 +5,7 @@ const CELL_SIZE = 20;
 let ws = null;
 let gameState = null;
 let playerId = 1;
-let gameMode = "one_player";
+let gameMode = "vs_ai";
 let aiDifficulty = 5;
 let lastScore = 0;
 
