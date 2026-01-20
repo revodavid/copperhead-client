@@ -4,11 +4,12 @@ const CELL_SIZE = 20;
 
 let ws = null;
 let gameState = null;
+let wins = {1: 0, 2: 0};
 let playerId = 1;
 let gameMode = "vs_ai";
 let aiDifficulty = 5;
-let lastScore = 0;
-let lastOpponentScore = 0;
+let lastSnakeLength = 0;
+let lastOpponentLength = 0;
 
 // DOM elements
 const setupPanel = document.getElementById("setup");
@@ -110,21 +111,24 @@ function tryConnect(baseUrl, tryPlayerId) {
 function handleMessage(data) {
     switch (data.type) {
         case "state":
-            // Check if player ate food (score increased)
+            // Check if player ate food (snake grew)
             if (gameState && gameState.running && data.game.running) {
                 const mySnake = data.game.snakes[playerId];
-                if (mySnake && mySnake.score > lastScore) {
+                if (mySnake && mySnake.body.length > lastSnakeLength) {
                     sfx.eat();
-                    lastScore = mySnake.score;
+                    lastSnakeLength = mySnake.body.length;
                 }
                 
                 // Check if opponent ate food
                 const opponentId = playerId === 1 ? "2" : "1";
                 const opponentSnake = data.game.snakes[opponentId];
-                if (opponentSnake && opponentSnake.score > lastOpponentScore) {
+                if (opponentSnake && opponentSnake.body.length > lastOpponentLength) {
                     sfx.opponentEat();
-                    lastOpponentScore = opponentSnake.score;
+                    lastOpponentLength = opponentSnake.body.length;
                 }
+            }
+            if (data.wins) {
+                wins = data.wins;
             }
             gameState = data.game;
             updateCanvas();
@@ -133,11 +137,15 @@ function handleMessage(data) {
         case "start":
             setStatus("Game started!", "playing");
             readyBtn.classList.add("hidden");
-            lastScore = 0;
-            lastOpponentScore = 0;
+            lastSnakeLength = 1;
+            lastOpponentLength = 1;
             sfx.gameStart();
             break;
         case "gameover":
+            if (data.wins) {
+                wins = data.wins;
+                updateScores();
+            }
             let msg;
             if (data.winner === null) {
                 msg = "Game Over - Draw!";
@@ -317,15 +325,12 @@ function updateCanvas() {
 }
 
 function updateScores() {
-    if (!gameState) return;
-
+    const myWins = wins[playerId] || 0;
+    const opponentId = playerId === 1 ? 2 : 1;
+    const opponentWins = wins[opponentId] || 0;
+    
     let html = "";
-    for (const [pid, snake] of Object.entries(gameState.snakes)) {
-        const isMe = parseInt(pid) === playerId;
-        const label = isMe ? "You" : "Opponent";
-        // Use player1 color for local player, player2 for opponent
-        const colorClass = isMe ? "player1" : "player2";
-        html += `<div class="score ${colorClass}">${label}: ${snake.score}</div>`;
-    }
+    html += `<div class="score player1">You: ${myWins} wins</div>`;
+    html += `<div class="score player2">Opponent: ${opponentWins} wins</div>`;
     scoresDiv.innerHTML = html;
 }
