@@ -148,9 +148,7 @@ function sendReady() {
         
         // Update goal text based on mode
         if (goalText) {
-            if (gameMode === "one_player") {
-                goalText.textContent = "Eat food to grow your snake and maximize your score. Don't hit the walls or yourself!";
-            } else if (gameMode === "vs_ai") {
+            if (gameMode === "vs_ai") {
                 goalText.textContent = `Outlast the AI opponent (Level ${aiDifficulty})! Avoid walls, yourself, and the enemy snake.`;
             } else {
                 goalText.textContent = "Outlast your opponent! Avoid walls, yourself, and the enemy snake.";
