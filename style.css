@@ -191,11 +191,22 @@ button:disabled {
     display: block;
 }
 
+.difficulty-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #ccc;
+}
+
+.difficulty-row input[type="range"] {
+    flex: 1;
+}
+
 #difficultyValue {
-    text-align: center;
     color: #f39c12;
     font-weight: bold;
-    margin-top: 5px;
+    min-width: 20px;
 }
 
 input[type="range"] {

@@ -40,7 +40,7 @@ function updateModeUI() {
 
 function updateDifficultyDisplay() {
     aiDifficulty = parseInt(aiDifficultySlider.value);
-    difficultyValue.textContent = "Level " + aiDifficulty;
+    difficultyValue.textContent = aiDifficulty;
 }
 
 function connect() {
@@ -208,7 +208,7 @@ function handleKeydown(event) {
             const digit = parseInt(digitMatch[1]);
             aiDifficulty = digit === 0 ? 10 : digit;
             aiDifficultySlider.value = aiDifficulty;
-            difficultyValue.textContent = "Level " + aiDifficulty;
+            difficultyValue.textContent = aiDifficulty;
             
             // If game is running, send difficulty change to server
             if (ws && ws.readyState === WebSocket.OPEN && gameState && gameState.running) {
