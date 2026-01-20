@@ -14,7 +14,6 @@ let lastOpponentScore = 0;
 const setupPanel = document.getElementById("setup");
 const gamePanel = document.getElementById("game");
 const serverUrlInput = document.getElementById("serverUrl");
-const playerIdSelect = document.getElementById("playerId");
 const gameModeSelect = document.getElementById("gameMode");
 const difficultySection = document.getElementById("difficultySection");
 const aiDifficultySlider = document.getElementById("aiDifficulty");
@@ -45,7 +44,6 @@ function updateDifficultyDisplay() {
 
 function connect() {
     const baseUrl = serverUrlInput.value.trim();
-    playerId = parseInt(playerIdSelect.value);
     gameMode = gameModeSelect.value;
 
     if (!baseUrl) {
@@ -53,19 +51,26 @@ function connect() {
         return;
     }
 
-    const wsUrl = baseUrl.endsWith("/") ? `${baseUrl}${playerId}` : `${baseUrl}/${playerId}`;
+    connectBtn.disabled = true;
+    setStatus("Connecting...", "");
+    
+    // Try to connect as player 1 first, then player 2
+    tryConnect(baseUrl, 1);
+}
+
+function tryConnect(baseUrl, tryPlayerId) {
+    const wsUrl = baseUrl.endsWith("/") ? `${baseUrl}${tryPlayerId}` : `${baseUrl}/${tryPlayerId}`;
     
     try {
         ws = new WebSocket(wsUrl);
     } catch (e) {
         setStatus("Invalid URL", "error");
+        connectBtn.disabled = false;
         return;
     }
 
-    connectBtn.disabled = true;
-    setStatus("Connecting...", "");
-
     ws.onopen = () => {
+        playerId = tryPlayerId;
         setupPanel.classList.add("hidden");
         gamePanel.classList.remove("hidden");
         readyBtn.classList.remove("hidden");
@@ -85,7 +90,12 @@ function connect() {
         handleMessage(data);
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
+        // If player 1 slot taken, try player 2
+        if (event.code === 4001 && tryPlayerId === 1) {
+            tryConnect(baseUrl, 2);
+            return;
+        }
         setStatus("Disconnected", "error");
         readyBtn.classList.add("hidden");
         connectBtn.disabled = false;
@@ -276,14 +286,13 @@ function updateCanvas() {
         ctx.fill();
     }
 
-    // Draw snakes
-    const colors = {
-        1: { body: "#27ae60", head: "#2ecc71" },
-        2: { body: "#c0392b", head: "#e74c3c" }
-    };
-
+    // Draw snakes - green for local player, red for opponent
     for (const [pid, snake] of Object.entries(gameState.snakes)) {
-        const color = colors[pid] || colors[1];
+        const isMe = parseInt(pid) === playerId;
+        const color = isMe 
+            ? { body: "#27ae60", head: "#2ecc71" }
+            : { body: "#c0392b", head: "#e74c3c" };
+        
         if (!snake.alive) {
             ctx.globalAlpha = 0.4;
         }
@@ -308,15 +317,10 @@ function updateScores() {
     let html = "";
     for (const [pid, snake] of Object.entries(gameState.snakes)) {
         const isMe = parseInt(pid) === playerId;
-        let label;
-        if (isMe) {
-            label = "You";
-        } else if (gameMode === "vs_ai") {
-            label = "AI";
-        } else {
-            label = "P" + pid;
-        }
-        html += `<div class="score player${pid}">${label}: ${snake.score}</div>`;
+        const label = isMe ? "You" : "Opponent";
+        // Use player1 color for local player, player2 for opponent
+        const colorClass = isMe ? "player1" : "player2";
+        html += `<div class="score ${colorClass}">${label}: ${snake.score}</div>`;
     }
     scoresDiv.innerHTML = html;
 }
