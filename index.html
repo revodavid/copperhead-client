@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CopperHead Snake</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="container">
+        <h1>🐍 CopperHead</h1>
+        
+        <div id="setup" class="panel">
+            <div class="form-group">
+                <label for="serverUrl">Server URL:</label>
+                <input type="text" id="serverUrl" placeholder="ws://localhost:8000/ws/">
+            </div>
+            <div class="form-group">
+                <label for="playerId">Player:</label>
+                <select id="playerId">
+                    <option value="1">Player 1</option>
+                    <option value="2">Player 2</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="gameMode">Mode:</label>
+                <select id="gameMode">
+                    <option value="one_player">Single Player</option>
+                    <option value="two_player">Two Player</option>
+                </select>
+            </div>
+            <button id="connectBtn">Connect</button>
+        </div>
+
+        <div id="game" class="panel hidden">
+            <div id="status">Waiting to connect...</div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="scores"></div>
+            <button id="readyBtn" class="hidden">Ready</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

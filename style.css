@@ -1,0 +1,131 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#container {
+    text-align: center;
+    max-width: 800px;
+}
+
+h1 {
+    color: #f39c12;
+    margin-bottom: 20px;
+}
+
+.panel {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #aaa;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #333;
+    border-radius: 5px;
+    background: #0f0f23;
+    color: #eee;
+    font-size: 16px;
+}
+
+button {
+    background: #f39c12;
+    color: #1a1a2e;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #e67e22;
+}
+
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+#status {
+    font-size: 18px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background: #0f0f23;
+}
+
+#status.connected {
+    color: #2ecc71;
+}
+
+#status.error {
+    color: #e74c3c;
+}
+
+#status.playing {
+    color: #f39c12;
+}
+
+#gameCanvas {
+    border: 2px solid #f39c12;
+    border-radius: 5px;
+    background: #0f0f23;
+    display: block;
+    margin: 0 auto;
+}
+
+#scores {
+    margin-top: 15px;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+}
+
+.score {
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.score.player1 {
+    background: #27ae60;
+}
+
+.score.player2 {
+    background: #e74c3c;
+}
+
+#readyBtn {
+    margin-top: 15px;
+}

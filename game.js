@@ -1,0 +1,225 @@
+// CopperHead Client
+
+const CELL_SIZE = 20;
+
+let ws = null;
+let gameState = null;
+let playerId = 1;
+let gameMode = "one_player";
+
+// DOM elements
+const setupPanel = document.getElementById("setup");
+const gamePanel = document.getElementById("game");
+const serverUrlInput = document.getElementById("serverUrl");
+const playerIdSelect = document.getElementById("playerId");
+const gameModeSelect = document.getElementById("gameMode");
+const connectBtn = document.getElementById("connectBtn");
+const statusDiv = document.getElementById("status");
+const scoresDiv = document.getElementById("scores");
+const readyBtn = document.getElementById("readyBtn");
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Event listeners
+connectBtn.addEventListener("click", connect);
+readyBtn.addEventListener("click", sendReady);
+document.addEventListener("keydown", handleKeydown);
+
+function connect() {
+    const baseUrl = serverUrlInput.value.trim();
+    playerId = parseInt(playerIdSelect.value);
+    gameMode = gameModeSelect.value;
+
+    if (!baseUrl) {
+        alert("Please enter a server URL");
+        return;
+    }
+
+    const wsUrl = baseUrl.endsWith("/") ? `${baseUrl}${playerId}` : `${baseUrl}/${playerId}`;
+    
+    try {
+        ws = new WebSocket(wsUrl);
+    } catch (e) {
+        setStatus("Invalid URL", "error");
+        return;
+    }
+
+    connectBtn.disabled = true;
+    setStatus("Connecting...", "");
+
+    ws.onopen = () => {
+        setupPanel.classList.add("hidden");
+        gamePanel.classList.remove("hidden");
+        readyBtn.classList.remove("hidden");
+        setStatus("Connected! Click Ready to start.", "connected");
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleMessage(data);
+    };
+
+    ws.onclose = () => {
+        setStatus("Disconnected", "error");
+        readyBtn.classList.add("hidden");
+        connectBtn.disabled = false;
+    };
+
+    ws.onerror = () => {
+        setStatus("Connection error", "error");
+        connectBtn.disabled = false;
+    };
+}
+
+function handleMessage(data) {
+    switch (data.type) {
+        case "state":
+            gameState = data.game;
+            updateCanvas();
+            updateScores();
+            break;
+        case "start":
+            setStatus("Game started!", "playing");
+            readyBtn.classList.add("hidden");
+            break;
+        case "gameover":
+            let msg;
+            if (data.winner === null) {
+                msg = "Game Over - Draw!";
+            } else if (data.winner === playerId) {
+                msg = "🏆 You Win!";
+            } else {
+                msg = "Game Over - You Lose";
+            }
+            setStatus(msg, "connected");
+            readyBtn.classList.remove("hidden");
+            readyBtn.textContent = "Play Again";
+            break;
+    }
+}
+
+function sendReady() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "ready", mode: gameMode }));
+        setStatus("Waiting for game to start...", "connected");
+        readyBtn.classList.add("hidden");
+    }
+}
+
+function handleKeydown(event) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!gameState || !gameState.running) {
+        if (event.code === "Space") {
+            sendReady();
+        }
+        return;
+    }
+
+    let direction = null;
+    switch (event.code) {
+        case "ArrowUp":
+        case "KeyW":
+            direction = "up";
+            break;
+        case "ArrowDown":
+        case "KeyS":
+            direction = "down";
+            break;
+        case "ArrowLeft":
+        case "KeyA":
+            direction = "left";
+            break;
+        case "ArrowRight":
+        case "KeyD":
+            direction = "right";
+            break;
+    }
+
+    if (direction) {
+        event.preventDefault();
+        ws.send(JSON.stringify({ action: "move", direction }));
+    }
+}
+
+function setStatus(text, className) {
+    statusDiv.textContent = text;
+    statusDiv.className = className;
+}
+
+function updateCanvas() {
+    if (!gameState) return;
+
+    const grid = gameState.grid;
+    canvas.width = grid.width * CELL_SIZE;
+    canvas.height = grid.height * CELL_SIZE;
+
+    // Clear
+    ctx.fillStyle = "#0f0f23";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw grid lines
+    ctx.strokeStyle = "#1a1a2e";
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= grid.width; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * CELL_SIZE, 0);
+        ctx.lineTo(x * CELL_SIZE, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= grid.height; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * CELL_SIZE);
+        ctx.lineTo(canvas.width, y * CELL_SIZE);
+        ctx.stroke();
+    }
+
+    // Draw food
+    if (gameState.food) {
+        ctx.fillStyle = "#f39c12";
+        ctx.beginPath();
+        ctx.arc(
+            gameState.food[0] * CELL_SIZE + CELL_SIZE / 2,
+            gameState.food[1] * CELL_SIZE + CELL_SIZE / 2,
+            CELL_SIZE / 2 - 2,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+    }
+
+    // Draw snakes
+    const colors = {
+        1: { body: "#27ae60", head: "#2ecc71" },
+        2: { body: "#c0392b", head: "#e74c3c" }
+    };
+
+    for (const [pid, snake] of Object.entries(gameState.snakes)) {
+        const color = colors[pid] || colors[1];
+        if (!snake.alive) {
+            ctx.globalAlpha = 0.4;
+        }
+
+        snake.body.forEach((segment, i) => {
+            ctx.fillStyle = i === 0 ? color.head : color.body;
+            ctx.fillRect(
+                segment[0] * CELL_SIZE + 1,
+                segment[1] * CELL_SIZE + 1,
+                CELL_SIZE - 2,
+                CELL_SIZE - 2
+            );
+        });
+
+        ctx.globalAlpha = 1;
+    }
+}
+
+function updateScores() {
+    if (!gameState) return;
+
+    let html = "";
+    for (const [pid, snake] of Object.entries(gameState.snakes)) {
+        const isMe = parseInt(pid) === playerId;
+        html += `<div class="score player${pid}">${isMe ? "You" : "P" + pid}: ${snake.score}</div>`;
+    }
+    scoresDiv.innerHTML = html;
+}
