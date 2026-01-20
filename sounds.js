@@ -34,9 +34,7 @@ class SoundFX {
         osc.frequency.setValueAtTime(300, now + 0.07);
         
         gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialDecayTo = 0.01;
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialDecayTo(0.01, now + 0.14);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
         
         osc.start(now);
         osc.stop(now + 0.14);
@@ -62,14 +60,14 @@ class SoundFX {
             
             const startTime = this.audioCtx.currentTime + (i * duration);
             gain.gain.setValueAtTime(0.15, startTime);
-            gain.gain.exponentialDecayTo(0.01, startTime + duration - 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration - 0.02);
             
             osc.start(startTime);
             osc.stop(startTime + duration);
         });
     }
 
-    // Death sound - descending wah-wah
+    // Death sound- descending wah-wah
     death() {
         if (!this.enabled) return;
         this.init();
@@ -190,10 +188,5 @@ class SoundFX {
         osc.stop(now + 0.05);
     }
 }
-
-// Polyfill for exponentialDecayTo
-GainNode.prototype.exponentialDecayTo = function(value, endTime) {
-    this.gain.exponentialRampToValueAtTime(Math.max(value, 0.0001), endTime);
-};
 
 const sfx = new SoundFX();
