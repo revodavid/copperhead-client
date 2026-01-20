@@ -203,16 +203,15 @@ input[type="range"] {
 }
 
 #scores {
-    margin-top: 15px;
-    font-size: 20px;
     display: flex;
-    justify-content: center;
-    gap: 40px;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .score {
     padding: 10px 20px;
     border-radius: 5px;
+    text-align: center;
 }
 
 .score.player1 {
@@ -223,6 +222,14 @@ input[type="range"] {
     background: #e74c3c;
 }
 
+#left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 120px;
+    align-items: stretch;
+}
+
 #readyBtn {
-    margin-top: 15px;
+    width: 100%;
 }
