@@ -8,6 +8,7 @@ let playerId = 1;
 let gameMode = "vs_ai";
 let aiDifficulty = 5;
 let lastScore = 0;
+let lastOpponentScore = 0;
 
 // DOM elements
 const setupPanel = document.getElementById("setup");
@@ -106,6 +107,14 @@ function handleMessage(data) {
                     sfx.eat();
                     lastScore = mySnake.score;
                 }
+                
+                // Check if opponent ate food
+                const opponentId = playerId === 1 ? "2" : "1";
+                const opponentSnake = data.game.snakes[opponentId];
+                if (opponentSnake && opponentSnake.score > lastOpponentScore) {
+                    sfx.opponentEat();
+                    lastOpponentScore = opponentSnake.score;
+                }
             }
             gameState = data.game;
             updateCanvas();
@@ -115,6 +124,7 @@ function handleMessage(data) {
             setStatus("Game started!", "playing");
             readyBtn.classList.add("hidden");
             lastScore = 0;
+            lastOpponentScore = 0;
             sfx.gameStart();
             break;
         case "gameover":

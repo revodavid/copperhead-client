@@ -40,6 +40,31 @@ class SoundFX {
         osc.stop(now + 0.14);
     }
 
+    // Opponent eating sound - lower pitch, slightly menacing
+    opponentEat() {
+        if (!this.enabled) return;
+        this.init();
+        
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        
+        osc.type = 'sawtooth';
+        const now = this.audioCtx.currentTime;
+        
+        // Lower, more ominous tones
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.setValueAtTime(150, now + 0.07);
+        
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+        
+        osc.start(now);
+        osc.stop(now + 0.14);
+    }
+
     // Game start jingle
     gameStart() {
         if (!this.enabled) return;
