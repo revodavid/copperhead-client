@@ -16,7 +16,7 @@ body {
 
 #container {
     text-align: center;
-    max-width: 800px;
+    max-width: 1000px;
 }
 
 h1 {
@@ -102,8 +102,86 @@ button:disabled {
     border-radius: 5px;
     background: #0f0f23;
     display: block;
-    margin: 0 auto;
 }
+
+#game-area {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+#instructions {
+    background: #0f0f23;
+    border: 2px solid #333;
+    border-radius: 5px;
+    padding: 15px;
+    width: 200px;
+    text-align: left;
+}
+
+#instructions h3 {
+    margin: 0 0 15px 0;
+    color: #f39c12;
+    text-align: center;
+}
+
+#instructions h4 {
+    margin: 0 0 8px 0;
+    color: #aaa;
+    font-size: 14px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+
+.instruction-section {
+    margin-bottom: 15px;
+}
+
+.instruction-section p {
+    margin: 0;
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.4;
+}
+
+.key-row {
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #ccc;
+}
+
+.key {
+    display: inline-block;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 12px;
+    min-width: 20px;
+    text-align: center;
+    margin-right: 5px;
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #ccc;
+}
+
+.legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 8px;
+}
+
+.player1-color { background: #27ae60; }
+.player2-color { background: #c0392b; }
+.food-color { background: #f39c12; border-radius: 50%; }
 
 #scores {
     margin-top: 15px;

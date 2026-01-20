@@ -34,7 +34,30 @@
 
         <div id="game" class="panel hidden">
             <div id="status">Waiting to connect...</div>
-            <canvas id="gameCanvas"></canvas>
+            <div id="game-area">
+                <canvas id="gameCanvas"></canvas>
+                <div id="instructions">
+                    <h3>🎮 How to Play</h3>
+                    <div class="instruction-section">
+                        <h4>Goal</h4>
+                        <p id="goal-text">Eat food to grow your snake and increase your score. Don't hit the walls or yourself!</p>
+                    </div>
+                    <div class="instruction-section">
+                        <h4>Controls</h4>
+                        <div class="key-row"><span class="key">↑</span> or <span class="key">W</span> Move Up</div>
+                        <div class="key-row"><span class="key">↓</span> or <span class="key">S</span> Move Down</div>
+                        <div class="key-row"><span class="key">←</span> or <span class="key">A</span> Move Left</div>
+                        <div class="key-row"><span class="key">→</span> or <span class="key">D</span> Move Right</div>
+                        <div class="key-row"><span class="key">Space</span> Ready / Restart</div>
+                    </div>
+                    <div class="instruction-section">
+                        <h4>Legend</h4>
+                        <div class="legend-row"><span class="legend-box player1-color"></span> Player 1</div>
+                        <div class="legend-row"><span class="legend-box player2-color"></span> Player 2</div>
+                        <div class="legend-row"><span class="legend-box food-color"></span> Food (+10 pts)</div>
+                    </div>
+                </div>
+            </div>
             <div id="scores"></div>
             <button id="readyBtn" class="hidden">Ready</button>
         </div>
