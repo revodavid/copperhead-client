@@ -169,7 +169,7 @@ function sendReady() {
         // Update goal text based on mode
         if (goalText) {
             if (gameMode === "vs_ai") {
-                goalText.textContent = `Outlast the AI opponent (Level ${aiDifficulty})! Avoid walls, yourself, and the enemy snake.`;
+                goalText.textContent = "Outlast the AI opponent! Avoid walls, yourself, and the enemy snake.";
             } else {
                 goalText.textContent = "Outlast your opponent! Avoid walls, yourself, and the enemy snake.";
             }
