@@ -2,6 +2,8 @@
 
 Web-based client for the CopperHead 2-player Snake game.
 
+**Server:** [copperhead-server](https://github.com/revodavid/copperhead-server) | **Play Online:** [GitHub Pages](https://revodavid.github.io/copperhead-client/)
+
 ## Features
 
 - HTML5 Canvas rendering
