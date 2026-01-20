@@ -193,14 +193,19 @@ function handleKeydown(event) {
         return;
     }
 
-    // Number keys 1-9, 0 set AI difficulty (0 = level 10)
-    if (gameMode === "vs_ai" && (!gameState || !gameState.running)) {
+    // Number keys 1-9, 0 set AI difficulty (0 = level 10) - works anytime in vs_ai mode
+    if (gameMode === "vs_ai") {
         const digitMatch = event.code.match(/^Digit(\d)$/);
         if (digitMatch) {
             const digit = parseInt(digitMatch[1]);
             aiDifficulty = digit === 0 ? 10 : digit;
             aiDifficultySlider.value = aiDifficulty;
             difficultyValue.textContent = "Level " + aiDifficulty;
+            
+            // If game is running, send difficulty change to server
+            if (ws && ws.readyState === WebSocket.OPEN && gameState && gameState.running) {
+                ws.send(JSON.stringify({ action: "set_ai_difficulty", ai_difficulty: aiDifficulty }));
+            }
             return;
         }
     }
