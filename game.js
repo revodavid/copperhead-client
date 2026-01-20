@@ -7,6 +7,7 @@ let gameState = null;
 let playerId = 1;
 let gameMode = "one_player";
 let aiDifficulty = 5;
+let lastScore = 0;
 
 // DOM elements
 const setupPanel = document.getElementById("setup");
@@ -95,6 +96,14 @@ function connect() {
 function handleMessage(data) {
     switch (data.type) {
         case "state":
+            // Check if player ate food (score increased)
+            if (gameState && gameState.running && data.game.running) {
+                const mySnake = data.game.snakes[playerId];
+                if (mySnake && mySnake.score > lastScore) {
+                    sfx.eat();
+                    lastScore = mySnake.score;
+                }
+            }
             gameState = data.game;
             updateCanvas();
             updateScores();
@@ -102,15 +111,20 @@ function handleMessage(data) {
         case "start":
             setStatus("Game started!", "playing");
             readyBtn.classList.add("hidden");
+            lastScore = 0;
+            sfx.gameStart();
             break;
         case "gameover":
             let msg;
             if (data.winner === null) {
                 msg = "Game Over - Draw!";
+                sfx.lose();
             } else if (data.winner === playerId) {
                 msg = "🏆 You Win!";
+                sfx.win();
             } else {
                 msg = gameMode === "vs_ai" ? "Game Over - AI Wins" : "Game Over - You Lose";
+                sfx.death();
             }
             setStatus(msg, "connected");
             readyBtn.classList.remove("hidden");
@@ -173,6 +187,7 @@ function handleKeydown(event) {
 
     if (direction) {
         event.preventDefault();
+        sfx.move();
         ws.send(JSON.stringify({ action: "move", direction }));
     }
 }
