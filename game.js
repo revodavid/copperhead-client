@@ -157,6 +157,21 @@ function sendReady() {
 }
 
 function handleKeydown(event) {
+    // ESC returns to setup screen
+    if (event.code === "Escape") {
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+        gameState = null;
+        lastScore = 0;
+        gamePanel.classList.add("hidden");
+        setupPanel.classList.remove("hidden");
+        connectBtn.disabled = false;
+        setStatus("Waiting to connect...", "");
+        return;
+    }
+
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     if (!gameState || !gameState.running) {
         if (event.code === "Space") {
