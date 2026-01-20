@@ -173,6 +173,18 @@ function handleKeydown(event) {
         return;
     }
 
+    // Number keys 1-9, 0 set AI difficulty (0 = level 10)
+    if (gameMode === "vs_ai" && (!gameState || !gameState.running)) {
+        const digitMatch = event.code.match(/^Digit(\d)$/);
+        if (digitMatch) {
+            const digit = parseInt(digitMatch[1]);
+            aiDifficulty = digit === 0 ? 10 : digit;
+            aiDifficultySlider.value = aiDifficulty;
+            difficultyValue.textContent = "Level " + aiDifficulty;
+            return;
+        }
+    }
+
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     if (!gameState || !gameState.running) {
         if (event.code === "Space") {
