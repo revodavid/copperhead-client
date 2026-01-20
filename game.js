@@ -6,6 +6,7 @@ let ws = null;
 let gameState = null;
 let playerId = 1;
 let gameMode = "one_player";
+let aiDifficulty = 5;
 
 // DOM elements
 const setupPanel = document.getElementById("setup");
@@ -13,17 +14,37 @@ const gamePanel = document.getElementById("game");
 const serverUrlInput = document.getElementById("serverUrl");
 const playerIdSelect = document.getElementById("playerId");
 const gameModeSelect = document.getElementById("gameMode");
+const difficultyGroup = document.getElementById("difficultyGroup");
+const aiDifficultySlider = document.getElementById("aiDifficulty");
+const difficultyValue = document.getElementById("difficultyValue");
 const connectBtn = document.getElementById("connectBtn");
 const statusDiv = document.getElementById("status");
 const scoresDiv = document.getElementById("scores");
 const readyBtn = document.getElementById("readyBtn");
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const goalText = document.getElementById("goal-text");
 
 // Event listeners
 connectBtn.addEventListener("click", connect);
 readyBtn.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
+gameModeSelect.addEventListener("change", updateModeUI);
+aiDifficultySlider.addEventListener("input", updateDifficultyDisplay);
+
+function updateModeUI() {
+    gameMode = gameModeSelect.value;
+    if (gameMode === "vs_ai") {
+        difficultyGroup.classList.add("visible");
+    } else {
+        difficultyGroup.classList.remove("visible");
+    }
+}
+
+function updateDifficultyDisplay() {
+    aiDifficulty = parseInt(aiDifficultySlider.value);
+    difficultyValue.textContent = aiDifficulty;
+}
 
 function connect() {
     const baseUrl = serverUrlInput.value.trim();
@@ -89,7 +110,7 @@ function handleMessage(data) {
             } else if (data.winner === playerId) {
                 msg = "🏆 You Win!";
             } else {
-                msg = "Game Over - You Lose";
+                msg = gameMode === "vs_ai" ? "Game Over - AI Wins" : "Game Over - You Lose";
             }
             setStatus(msg, "connected");
             readyBtn.classList.remove("hidden");
@@ -100,9 +121,24 @@ function handleMessage(data) {
 
 function sendReady() {
     if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: "ready", mode: gameMode }));
+        const msg = { action: "ready", mode: gameMode };
+        if (gameMode === "vs_ai") {
+            msg.ai_difficulty = aiDifficulty;
+        }
+        ws.send(JSON.stringify(msg));
         setStatus("Waiting for game to start...", "connected");
         readyBtn.classList.add("hidden");
+        
+        // Update goal text based on mode
+        if (goalText) {
+            if (gameMode === "one_player") {
+                goalText.textContent = "Eat food to grow your snake and maximize your score. Don't hit the walls or yourself!";
+            } else if (gameMode === "vs_ai") {
+                goalText.textContent = `Outlast the AI opponent (Level ${aiDifficulty})! Avoid walls, yourself, and the enemy snake.`;
+            } else {
+                goalText.textContent = "Outlast your opponent! Avoid walls, yourself, and the enemy snake.";
+            }
+        }
     }
 }
 
@@ -219,7 +255,15 @@ function updateScores() {
     let html = "";
     for (const [pid, snake] of Object.entries(gameState.snakes)) {
         const isMe = parseInt(pid) === playerId;
-        html += `<div class="score player${pid}">${isMe ? "You" : "P" + pid}: ${snake.score}</div>`;
+        let label;
+        if (isMe) {
+            label = "You";
+        } else if (gameMode === "vs_ai") {
+            label = "AI";
+        } else {
+            label = "P" + pid;
+        }
+        html += `<div class="score player${pid}">${label}: ${snake.score}</div>`;
     }
     scoresDiv.innerHTML = html;
 }

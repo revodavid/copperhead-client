@@ -183,6 +183,19 @@ button:disabled {
 .player2-color { background: #c0392b; }
 .food-color { background: #f39c12; border-radius: 50%; }
 
+#difficultyGroup {
+    display: none;
+}
+
+#difficultyGroup.visible {
+    display: block;
+}
+
+input[type="range"] {
+    width: 100%;
+    margin-top: 5px;
+}
+
 #scores {
     margin-top: 15px;
     font-size: 20px;

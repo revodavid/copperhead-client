@@ -26,8 +26,13 @@
                 <label for="gameMode">Mode:</label>
                 <select id="gameMode">
                     <option value="one_player">Single Player</option>
-                    <option value="two_player">Two Player</option>
+                    <option value="vs_ai">vs AI</option>
+                    <option value="two_player">Two Player (PvP)</option>
                 </select>
+            </div>
+            <div class="form-group" id="difficultyGroup">
+                <label for="aiDifficulty">AI Difficulty: <span id="difficultyValue">5</span></label>
+                <input type="range" id="aiDifficulty" min="1" max="10" value="5">
             </div>
             <button id="connectBtn">Connect</button>
         </div>
