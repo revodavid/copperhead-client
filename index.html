@@ -17,7 +17,10 @@
             </div>
             <div class="form-group">
                 <label for="serverUrl">Server URL:</label>
-                <input type="text" id="serverUrl" value="ws://localhost:8000/ws/">
+                <select id="serverUrl">
+                    <option value="ws://localhost:8000/ws/" selected>Local (ws://localhost:8000/ws/)</option>
+                    <option value="wss://bookish-fortnight-p7wqx7rw7h96w7-8000.app.github.dev/ws">Codespaces (bookish-fortnight)</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="gameMode">Mode:</label>
