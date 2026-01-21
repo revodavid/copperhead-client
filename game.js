@@ -21,7 +21,8 @@ let currentRoomIndex = 0;
 const setupPanel = document.getElementById("setup");
 const gamePanel = document.getElementById("game");
 const playerNameInput = document.getElementById("playerName");
-const serverUrlInput = document.getElementById("serverUrl");
+const serverUrlSelect = document.getElementById("serverUrlSelect");
+const serverUrlCustom = document.getElementById("serverUrlCustom");
 const gameModeSelect = document.getElementById("gameMode");
 const difficultySection = document.getElementById("difficultySection");
 const aiDifficultySlider = document.getElementById("aiDifficulty");
@@ -43,6 +44,7 @@ observeBtn.addEventListener("click", observe);
 readyBtn.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
 gameModeSelect.addEventListener("change", updateModeUI);
+serverUrlSelect.addEventListener("change", updateServerUrlUI);
 aiDifficultySlider.addEventListener("input", updateDifficultyDisplay);
 
 function updateModeUI() {
@@ -54,8 +56,24 @@ function updateDifficultyDisplay() {
     difficultyValue.textContent = aiDifficulty;
 }
 
+function updateServerUrlUI() {
+    if (serverUrlSelect.value === "custom") {
+        serverUrlCustom.classList.remove("hidden");
+        serverUrlCustom.focus();
+    } else {
+        serverUrlCustom.classList.add("hidden");
+    }
+}
+
+function getServerUrl() {
+    if (serverUrlSelect.value === "custom") {
+        return serverUrlCustom.value.trim();
+    }
+    return serverUrlSelect.value;
+}
+
 function connect() {
-    const baseUrl = serverUrlInput.value.trim();
+    const baseUrl = getServerUrl();
     gameMode = gameModeSelect.value;
     playerName = playerNameInput.value.trim() || "Player";
     isObserver = false;
@@ -75,7 +93,7 @@ function connect() {
 }
 
 function observe() {
-    const baseUrl = serverUrlInput.value.trim();
+    const baseUrl = getServerUrl();
     isObserver = true;
     playerName = "Observer";
 
