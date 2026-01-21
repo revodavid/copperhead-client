@@ -458,23 +458,23 @@ function updateScores() {
     
     if (isObserver) {
         // Observer sees both players by their actual names
-        player1Name = names[1] || "Player 1";
-        player2Name = names[2] || "Player 2";
-        player1Wins = wins[1] || 0;
-        player2Wins = wins[2] || 0;
+        player1Name = names[1] || names["1"] || "Player 1";
+        player2Name = names[2] || names["2"] || "Player 2";
+        player1Wins = wins[1] || wins["1"] || 0;
+        player2Wins = wins[2] || wins["2"] || 0;
     } else {
         // Player sees themselves first, opponent second
         const opponentId = playerId === 1 ? 2 : 1;
         player1Name = playerName;
-        // Use actual opponent name, but show "Waiting..." if still default
-        const opponentName = names[opponentId];
+        // Use actual opponent name - check both string and number keys
+        const opponentName = names[opponentId] || names[String(opponentId)];
         if (opponentName && opponentName !== "Player 1" && opponentName !== "Player 2") {
             player2Name = opponentName;
         } else {
             player2Name = "Waiting...";
         }
-        player1Wins = wins[playerId] || 0;
-        player2Wins = wins[opponentId] || 0;
+        player1Wins = wins[playerId] || wins[String(playerId)] || 0;
+        player2Wins = wins[opponentId] || wins[String(opponentId)] || 0;
     }
     
     let html = `<table class="scores-table">
