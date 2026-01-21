@@ -23,12 +23,10 @@ const gamePanel = document.getElementById("game");
 const playerNameInput = document.getElementById("playerName");
 const serverUrlSelect = document.getElementById("serverUrlSelect");
 const serverUrlCustom = document.getElementById("serverUrlCustom");
-const gameModeSelect = document.getElementById("gameMode");
-const difficultySection = document.getElementById("difficultySection");
-const aiDifficultySlider = document.getElementById("aiDifficulty");
-const difficultyValue = document.getElementById("difficultyValue");
-const connectBtn = document.getElementById("connectBtn");
+const aiDifficultySelect = document.getElementById("aiDifficultySelect");
 const observeBtn = document.getElementById("observeBtn");
+const singlePlayerBtn = document.getElementById("singlePlayerBtn");
+const twoPlayerBtn = document.getElementById("twoPlayerBtn");
 const statusDiv = document.getElementById("status");
 const scoresDiv = document.getElementById("scores");
 const readyBtn = document.getElementById("readyBtn");
@@ -39,22 +37,12 @@ const instructionsDiv = document.getElementById("instructions");
 const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "";
 
 // Event listeners
-connectBtn.addEventListener("click", connect);
 observeBtn.addEventListener("click", observe);
+singlePlayerBtn.addEventListener("click", () => connectWithMode("vs_ai"));
+twoPlayerBtn.addEventListener("click", () => connectWithMode("two_player"));
 readyBtn.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
-gameModeSelect.addEventListener("change", updateModeUI);
 serverUrlSelect.addEventListener("change", updateServerUrlUI);
-aiDifficultySlider.addEventListener("input", updateDifficultyDisplay);
-
-function updateModeUI() {
-    gameMode = gameModeSelect.value;
-}
-
-function updateDifficultyDisplay() {
-    aiDifficulty = parseInt(aiDifficultySlider.value);
-    difficultyValue.textContent = aiDifficulty;
-}
 
 function updateServerUrlUI() {
     if (serverUrlSelect.value === "custom") {
@@ -72,10 +60,11 @@ function getServerUrl() {
     return serverUrlSelect.value;
 }
 
-function connect() {
+function connectWithMode(mode) {
     const baseUrl = getServerUrl();
-    gameMode = gameModeSelect.value;
-    playerName = playerNameInput.value.trim() || "Player";
+    gameMode = mode;
+    aiDifficulty = parseInt(aiDifficultySelect.value);
+    playerName = playerNameInput.value.trim() || "Human";
     isObserver = false;
 
     if (!baseUrl) {
@@ -83,8 +72,7 @@ function connect() {
         return;
     }
 
-    connectBtn.disabled = true;
-    observeBtn.disabled = true;
+    disableAllButtons();
     setStatus("Connecting...", "");
     
     // Use the new /join endpoint for auto-matchmaking
@@ -102,12 +90,23 @@ function observe() {
         return;
     }
 
-    connectBtn.disabled = true;
-    observeBtn.disabled = true;
+    disableAllButtons();
     setStatus("Connecting as observer...", "");
     
     const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/observe";
     connectWebSocket(wsUrl);
+}
+
+function disableAllButtons() {
+    observeBtn.disabled = true;
+    singlePlayerBtn.disabled = true;
+    twoPlayerBtn.disabled = true;
+}
+
+function enableAllButtons() {
+    observeBtn.disabled = false;
+    singlePlayerBtn.disabled = false;
+    twoPlayerBtn.disabled = false;
 }
 
 function connectWebSocket(wsUrl) {
@@ -115,8 +114,7 @@ function connectWebSocket(wsUrl) {
         ws = new WebSocket(wsUrl);
     } catch (e) {
         setStatus("Invalid URL", "error");
-        connectBtn.disabled = false;
-        observeBtn.disabled = false;
+        enableAllButtons();
         return;
     }
 
@@ -126,16 +124,10 @@ function connectWebSocket(wsUrl) {
         
         if (isObserver) {
             readyBtn.classList.add("hidden");
-            difficultySection.classList.remove("visible");
             setStatus("Observing... Waiting for game", "connected");
         } else {
             readyBtn.classList.remove("hidden");
             restorePlayerInstructions();
-            if (gameMode === "vs_ai") {
-                difficultySection.classList.add("visible");
-            } else {
-                difficultySection.classList.remove("visible");
-            }
             setStatus("Connected! Click Ready to start.", "connected");
         }
     };
@@ -154,14 +146,12 @@ function connectWebSocket(wsUrl) {
             setStatus("Disconnected", "error");
         }
         readyBtn.classList.add("hidden");
-        connectBtn.disabled = false;
-        observeBtn.disabled = false;
+        enableAllButtons();
     };
 
     ws.onerror = () => {
         setStatus("Connection error", "error");
-        connectBtn.disabled = false;
-        observeBtn.disabled = false;
+        enableAllButtons();
     };
 }
 
@@ -317,8 +307,7 @@ function handleKeydown(event) {
         roomId = null;
         gamePanel.classList.add("hidden");
         setupPanel.classList.remove("hidden");
-        connectBtn.disabled = false;
-        observeBtn.disabled = false;
+        enableAllButtons();
         setStatus("Waiting to connect...", "");
         return;
     }
@@ -339,23 +328,6 @@ function handleKeydown(event) {
             }
         }
         return;
-    }
-
-    // Number keys 1-9, 0 set AI difficulty (0 = level 10) - works anytime in vs_ai mode
-    if (gameMode === "vs_ai") {
-        const digitMatch = event.code.match(/^Digit(\d)$/);
-        if (digitMatch) {
-            const digit = parseInt(digitMatch[1]);
-            aiDifficulty = digit === 0 ? 10 : digit;
-            aiDifficultySlider.value = aiDifficulty;
-            difficultyValue.textContent = aiDifficulty;
-            
-            // If game is running, send difficulty change to server
-            if (ws && ws.readyState === WebSocket.OPEN && gameState && gameState.running) {
-                ws.send(JSON.stringify({ action: "set_ai_difficulty", ai_difficulty: aiDifficulty }));
-            }
-            return;
-        }
     }
 
     if (!ws || ws.readyState !== WebSocket.OPEN) return;

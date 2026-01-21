@@ -8,32 +8,61 @@
 </head>
 <body>
     <div id="container">
-        <h1>🐍 CopperHead</h1>
-        
         <div id="setup" class="panel">
-            <div class="form-group">
-                <label for="playerName">Your Name:</label>
-                <input type="text" id="playerName" placeholder="Enter your name" value="Human" maxlength="20">
+            <div class="logo-section">
+                <h1>🐍 CopperHead</h1>
+                <p class="tagline">Multiplayer Snake Game</p>
             </div>
-            <div class="form-group">
-                <label for="serverUrl">Server URL:</label>
-                <select id="serverUrlSelect">
-                    <option value="ws://localhost:8000/ws/" selected>Local (ws://localhost:8000/ws/)</option>
-                    <option value="wss://bookish-fortnight-p7wqx7rw7h96w7-8000.app.github.dev/ws">Codespaces (bookish-fortnight)</option>
-                    <option value="custom">Custom URL...</option>
-                </select>
-                <input type="text" id="serverUrlCustom" class="hidden" placeholder="wss://your-server/ws">
+            
+            <div class="setup-options">
+                <div class="form-group">
+                    <label for="playerName">Your Name:</label>
+                    <input type="text" id="playerName" placeholder="Enter your name" value="Human" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="serverUrlSelect">Server URL:</label>
+                    <select id="serverUrlSelect">
+                        <option value="wss://bookish-fortnight-p7wqx7rw7h96w7-8000.app.github.dev/ws" selected>Codespaces (bookish-fortnight)</option>
+                        <option value="ws://localhost:8000/ws/">Local (localhost:8000)</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                    <input type="text" id="serverUrlCustom" class="hidden" placeholder="wss://your-server/ws">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="gameMode">Mode:</label>
-                <select id="gameMode">
-                    <option value="vs_ai" selected>One Player (vs CopperBot)</option>
-                    <option value="two_player">Two Player</option>
-                </select>
-            </div>
-            <div class="button-group">
-                <button id="connectBtn">Play</button>
-                <button id="observeBtn">Observe a Game</button>
+
+            <div class="game-modes">
+                <div class="mode-card">
+                    <h3>👁️ Observe</h3>
+                    <p>Watch games in progress</p>
+                    <button id="observeBtn">Observe a Game</button>
+                </div>
+                
+                <div class="mode-card">
+                    <h3>🤖 Single Player</h3>
+                    <p>Play vs CopperBot AI</p>
+                    <div class="form-group">
+                        <label for="aiDifficultySelect">AI Level:</label>
+                        <select id="aiDifficultySelect">
+                            <option value="1">1 - Beginner</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5" selected>5 - Normal</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10 - Expert</option>
+                        </select>
+                    </div>
+                    <button id="singlePlayerBtn">Play vs AI</button>
+                </div>
+                
+                <div class="mode-card">
+                    <h3>👥 Two Player</h3>
+                    <p>Play vs another human</p>
+                    <button id="twoPlayerBtn">Find Opponent</button>
+                </div>
             </div>
         </div>
 
@@ -47,13 +76,6 @@
                 <canvas id="gameCanvas"></canvas>
                 <div id="instructions">
                     <h3>🎮 How to Play</h3>
-                    <div class="instruction-section" id="difficultySection">
-                        <div class="difficulty-row">
-                            <span>AI Level:</span>
-                            <input type="range" id="aiDifficulty" min="1" max="10" value="5">
-                            <span id="difficultyValue">5</span>
-                        </div>
-                    </div>
                     <div class="instruction-section">
                         <h4>Goal</h4>
                         <p id="goal-text">Eat food to grow your snake and increase your score. Don't hit the walls or yourself!</p>
