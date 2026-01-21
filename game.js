@@ -500,10 +500,15 @@ function updateObserverInfo() {
         <h3>👁️ Observer Mode</h3>
         <div class="instruction-section">
             <h4>Controls</h4>
-            <ul>
-                <li><strong>←/→</strong>: Switch between games</li>
-                <li><strong>ESC</strong>: Return to menu</li>
-            </ul>
+            <div class="key-row"><span class="key">←</span> Previous room</div>
+            <div class="key-row"><span class="key">→</span> Next room</div>
+            <div class="key-row"><span class="key">Esc</span> Back to menu</div>
+        </div>
+        <div class="instruction-section">
+            <h4>Legend</h4>
+            <div class="legend-row"><span class="legend-box player1-color"></span> Player 1</div>
+            <div class="legend-row"><span class="legend-box player2-color"></span> Player 2</div>
+            <div class="legend-row"><span class="legend-box food-color"></span> Food</div>
         </div>
         <div class="instruction-section">
             <h4>Active Games (${activeRooms.length})</h4>
