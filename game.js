@@ -152,6 +152,15 @@ function handleMessage(data) {
             roomId = data.room_id;
             setStatus(`Connected to Room ${roomId}! Click Ready to start.`, "connected");
             break;
+        case "observer_lobby":
+            // Observer waiting for games
+            roomId = null;
+            gameState = null;
+            activeRooms = [];
+            setStatus("No active games - waiting...", "connected");
+            updateCanvas();
+            updateObserverInfo();
+            break;
         case "observer_joined":
             // Observer joined a room
             roomId = data.room_id;
@@ -171,6 +180,7 @@ function handleMessage(data) {
             // Update active rooms list for observer
             activeRooms = data.rooms || [];
             currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
+            if (currentRoomIndex < 0) currentRoomIndex = 0;
             updateObserverInfo();
             break;
         case "state":
