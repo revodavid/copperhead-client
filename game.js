@@ -34,6 +34,8 @@ const readyBtn = document.getElementById("readyBtn");
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const goalText = document.getElementById("goal-text");
+const instructionsDiv = document.getElementById("instructions");
+const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "";
 
 // Event listeners
 connectBtn.addEventListener("click", connect);
@@ -110,6 +112,7 @@ function connectWebSocket(wsUrl) {
             setStatus("Observing... Waiting for game", "connected");
         } else {
             readyBtn.classList.remove("hidden");
+            restorePlayerInstructions();
             if (gameMode === "vs_ai") {
                 difficultySection.classList.add("visible");
             } else {
@@ -511,4 +514,10 @@ function updateObserverInfo() {
             <div class="room-list">${roomListHtml}</div>
         </div>
     `;
+}
+
+function restorePlayerInstructions() {
+    if (instructionsDiv && originalInstructionsHtml) {
+        instructionsDiv.innerHTML = originalInstructionsHtml;
+    }
 }
