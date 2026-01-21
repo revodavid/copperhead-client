@@ -466,7 +466,13 @@ function updateScores() {
         // Player sees themselves first, opponent second
         const opponentId = playerId === 1 ? 2 : 1;
         player1Name = playerName;
-        player2Name = names[opponentId] || "Opponent";
+        // Use actual opponent name, but show "Waiting..." if still default
+        const opponentName = names[opponentId];
+        if (opponentName && opponentName !== "Player 1" && opponentName !== "Player 2") {
+            player2Name = opponentName;
+        } else {
+            player2Name = "Waiting...";
+        }
         player1Wins = wins[playerId] || 0;
         player2Wins = wins[opponentId] || 0;
     }
