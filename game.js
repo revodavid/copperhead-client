@@ -96,8 +96,8 @@ function tryConnect(baseUrl, tryPlayerId) {
     };
 
     ws.onclose = (event) => {
-        // If player 1 slot taken, try player 2
-        if (event.code === 4001 && tryPlayerId === 1) {
+        // If player 1 slot taken (4001) or rejected (403/1006), try player 2
+        if (tryPlayerId === 1 && (event.code === 4001 || event.code === 4000 || event.code === 1006 || event.code === 403)) {
             tryConnect(baseUrl, 2);
             return;
         }
@@ -107,6 +107,10 @@ function tryConnect(baseUrl, tryPlayerId) {
     };
 
     ws.onerror = () => {
+        // Don't show error if we're going to retry as player 2
+        if (tryPlayerId === 1) {
+            return;
+        }
         setStatus("Connection error", "error");
         connectBtn.disabled = false;
     };
