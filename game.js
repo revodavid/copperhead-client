@@ -349,8 +349,12 @@ function updateScores() {
     const opponentWins = wins[opponentId] || 0;
     const opponentName = names[opponentId] || "Opponent";
     
-    let html = "";
-    html += `<div class="score player1">${playerName}: ${myWins} wins</div>`;
-    html += `<div class="score player2">${opponentName}: ${opponentWins} wins</div>`;
+    let html = `<table class="scores-table">
+        <thead><tr><th colspan="2">Games Won</th></tr></thead>
+        <tbody>
+            <tr class="player1"><td>${playerName}</td><td>${myWins}</td></tr>
+            <tr class="player2"><td>${opponentName}</td><td>${opponentWins}</td></tr>
+        </tbody>
+    </table>`;
     scoresDiv.innerHTML = html;
 }

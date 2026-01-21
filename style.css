@@ -219,17 +219,34 @@ input[type="range"] {
     gap: 10px;
 }
 
-.score {
-    padding: 10px 20px;
+.scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1a1a2e;
     border-radius: 5px;
-    text-align: center;
+    overflow: hidden;
 }
 
-.score.player1 {
+.scores-table th {
+    background: #0f3460;
+    padding: 8px;
+    font-size: 0.9em;
+}
+
+.scores-table td {
+    padding: 8px 12px;
+}
+
+.scores-table td:last-child {
+    text-align: right;
+    font-weight: bold;
+}
+
+.scores-table tr.player1 {
     background: #27ae60;
 }
 
-.score.player2 {
+.scores-table tr.player2 {
     background: #e74c3c;
 }
 
