@@ -243,10 +243,10 @@ function handleMessage(data) {
             } else {
                 setStatus("Game started!", "playing");
                 readyBtn.classList.add("hidden");
+                sfx.gameStart();
             }
             lastSnakeLength = 1;
             lastOpponentLength = 1;
-            sfx.gameStart();
             break;
         case "gameover":
             if (data.wins) {
