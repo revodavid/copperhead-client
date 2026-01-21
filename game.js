@@ -343,7 +343,7 @@ function updateScores() {
     const opponentName = names[opponentId] || "Opponent";
     
     let html = "";
-    html += `<div class="score player1">You: ${myWins} wins</div>`;
+    html += `<div class="score player1">${playerName}: ${myWins} wins</div>`;
     html += `<div class="score player2">${opponentName}: ${opponentWins} wins</div>`;
     scoresDiv.innerHTML = html;
 }
