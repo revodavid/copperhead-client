@@ -77,6 +77,24 @@ button:disabled {
     cursor: not-allowed;
 }
 
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.button-group button {
+    flex: 1;
+}
+
+#observeBtn {
+    background: #3498db;
+}
+
+#observeBtn:hover {
+    background: #2980b9;
+}
+
 #status {
     font-size: 18px;
     margin-bottom: 15px;

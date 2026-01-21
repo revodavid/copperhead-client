@@ -12,6 +12,8 @@ let gameMode = "vs_ai";
 let aiDifficulty = 5;
 let lastSnakeLength = 0;
 let lastOpponentLength = 0;
+let isObserver = false;
+let roomId = null;
 
 // DOM elements
 const setupPanel = document.getElementById("setup");
@@ -23,6 +25,7 @@ const difficultySection = document.getElementById("difficultySection");
 const aiDifficultySlider = document.getElementById("aiDifficulty");
 const difficultyValue = document.getElementById("difficultyValue");
 const connectBtn = document.getElementById("connectBtn");
+const observeBtn = document.getElementById("observeBtn");
 const statusDiv = document.getElementById("status");
 const scoresDiv = document.getElementById("scores");
 const readyBtn = document.getElementById("readyBtn");
@@ -32,6 +35,7 @@ const goalText = document.getElementById("goal-text");
 
 // Event listeners
 connectBtn.addEventListener("click", connect);
+observeBtn.addEventListener("click", observe);
 readyBtn.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
 gameModeSelect.addEventListener("change", updateModeUI);
@@ -50,6 +54,7 @@ function connect() {
     const baseUrl = serverUrlInput.value.trim();
     gameMode = gameModeSelect.value;
     playerName = playerNameInput.value.trim() || "Player";
+    isObserver = false;
 
     if (!baseUrl) {
         alert("Please enter a server URL");
@@ -57,37 +62,59 @@ function connect() {
     }
 
     connectBtn.disabled = true;
+    observeBtn.disabled = true;
     setStatus("Connecting...", "");
     
-    // Try to connect as player 1 first, then player 2
-    tryConnect(baseUrl, 1);
+    // Use the new /join endpoint for auto-matchmaking
+    const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/join";
+    connectWebSocket(wsUrl);
 }
 
-function tryConnect(baseUrl, tryPlayerId) {
-    const wsUrl = baseUrl.endsWith("/") ? `${baseUrl}${tryPlayerId}` : `${baseUrl}/${tryPlayerId}`;
+function observe() {
+    const baseUrl = serverUrlInput.value.trim();
+    isObserver = true;
+    playerName = "Observer";
+
+    if (!baseUrl) {
+        alert("Please enter a server URL");
+        return;
+    }
+
+    connectBtn.disabled = true;
+    observeBtn.disabled = true;
+    setStatus("Connecting as observer...", "");
     
+    const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/observe";
+    connectWebSocket(wsUrl);
+}
+
+function connectWebSocket(wsUrl) {
     try {
         ws = new WebSocket(wsUrl);
     } catch (e) {
         setStatus("Invalid URL", "error");
         connectBtn.disabled = false;
+        observeBtn.disabled = false;
         return;
     }
 
     ws.onopen = () => {
-        playerId = tryPlayerId;
         setupPanel.classList.add("hidden");
         gamePanel.classList.remove("hidden");
-        readyBtn.classList.remove("hidden");
         
-        // Show/hide AI difficulty slider based on mode
-        if (gameMode === "vs_ai") {
-            difficultySection.classList.add("visible");
-        } else {
+        if (isObserver) {
+            readyBtn.classList.add("hidden");
             difficultySection.classList.remove("visible");
+            setStatus("Observing... Waiting for game", "connected");
+        } else {
+            readyBtn.classList.remove("hidden");
+            if (gameMode === "vs_ai") {
+                difficultySection.classList.add("visible");
+            } else {
+                difficultySection.classList.remove("visible");
+            }
+            setStatus("Connected! Click Ready to start.", "connected");
         }
-        
-        setStatus("Connected! Click Ready to start.", "connected");
     };
 
     ws.onmessage = (event) => {
@@ -96,31 +123,46 @@ function tryConnect(baseUrl, tryPlayerId) {
     };
 
     ws.onclose = (event) => {
-        // If player 1 slot taken (4001) or rejected (403/1006), try player 2
-        if (tryPlayerId === 1 && (event.code === 4001 || event.code === 4000 || event.code === 1006 || event.code === 403)) {
-            tryConnect(baseUrl, 2);
-            return;
+        if (event.code === 4003) {
+            setStatus("No active game to observe", "error");
+        } else if (event.code === 4002) {
+            setStatus("Server full - try again later", "error");
+        } else {
+            setStatus("Disconnected", "error");
         }
-        setStatus("Disconnected", "error");
         readyBtn.classList.add("hidden");
         connectBtn.disabled = false;
+        observeBtn.disabled = false;
     };
 
     ws.onerror = () => {
-        // Don't show error if we're going to retry as player 2
-        if (tryPlayerId === 1) {
-            return;
-        }
         setStatus("Connection error", "error");
         connectBtn.disabled = false;
+        observeBtn.disabled = false;
     };
 }
 
 function handleMessage(data) {
     switch (data.type) {
+        case "joined":
+            // Player joined a room
+            playerId = data.player_id;
+            roomId = data.room_id;
+            setStatus(`Connected to Room ${roomId}! Click Ready to start.`, "connected");
+            break;
+        case "observer_joined":
+            // Observer joined a room
+            roomId = data.room_id;
+            if (data.wins) wins = data.wins;
+            if (data.names) names = data.names;
+            gameState = data.game;
+            setStatus(`Observing Room ${roomId}`, "connected");
+            updateCanvas();
+            updateScores();
+            break;
         case "state":
-            // Check if player ate food (snake grew)
-            if (gameState && gameState.running && data.game.running) {
+            // Sound effects only for players, not observers
+            if (!isObserver && gameState && gameState.running && data.game.running) {
                 const mySnake = data.game.snakes[playerId];
                 if (mySnake && mySnake.body.length > lastSnakeLength) {
                     sfx.eat();
@@ -141,13 +183,23 @@ function handleMessage(data) {
             if (data.names) {
                 names = data.names;
             }
+            if (data.room_id) {
+                roomId = data.room_id;
+            }
             gameState = data.game;
             updateCanvas();
             updateScores();
+            if (isObserver && gameState.running) {
+                setStatus(`Observing Room ${roomId}`, "playing");
+            }
             break;
         case "start":
-            setStatus("Game started!", "playing");
-            readyBtn.classList.add("hidden");
+            if (isObserver) {
+                setStatus(`Observing Room ${roomId} - Game in progress`, "playing");
+            } else {
+                setStatus("Game started!", "playing");
+                readyBtn.classList.add("hidden");
+            }
             lastSnakeLength = 1;
             lastOpponentLength = 1;
             sfx.gameStart();
@@ -160,22 +212,27 @@ function handleMessage(data) {
                 names = data.names;
             }
             updateScores();
-            const opponentId = playerId === 1 ? 2 : 1;
-            const opponentName = names[opponentId] || "Opponent";
-            let msg;
-            if (data.winner === null) {
-                msg = "Game Over - Draw!";
-                sfx.lose();
-            } else if (data.winner === playerId) {
-                msg = "🏆 You Win!";
-                sfx.win();
+            if (isObserver) {
+                const winnerName = data.winner ? (names[data.winner] || "Unknown") : "No one";
+                setStatus(`Game Over - ${winnerName} wins! Waiting for next game...`, "connected");
             } else {
-                msg = `Game Over - ${opponentName} Wins`;
-                sfx.death();
+                const opponentId = playerId === 1 ? 2 : 1;
+                const opponentName = names[opponentId] || "Opponent";
+                let msg;
+                if (data.winner === null) {
+                    msg = "Game Over - Draw!";
+                    sfx.lose();
+                } else if (data.winner === playerId) {
+                    msg = "🏆 You Win!";
+                    sfx.win();
+                } else {
+                    msg = `Game Over - ${opponentName} Wins`;
+                    sfx.death();
+                }
+                setStatus(msg, "connected");
+                readyBtn.classList.remove("hidden");
+                readyBtn.textContent = "Play Again";
             }
-            setStatus(msg, "connected");
-            readyBtn.classList.remove("hidden");
-            readyBtn.textContent = "Play Again";
             break;
         case "waiting":
             setStatus(data.message || "Waiting for opponent...", "connected");
@@ -212,13 +269,18 @@ function handleKeydown(event) {
             ws = null;
         }
         gameState = null;
-        lastScore = 0;
+        isObserver = false;
+        roomId = null;
         gamePanel.classList.add("hidden");
         setupPanel.classList.remove("hidden");
         connectBtn.disabled = false;
+        observeBtn.disabled = false;
         setStatus("Waiting to connect...", "");
         return;
     }
+
+    // Observers can't control the game
+    if (isObserver) return;
 
     // Number keys 1-9, 0 set AI difficulty (0 = level 10) - works anytime in vs_ai mode
     if (gameMode === "vs_ai") {
