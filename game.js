@@ -5,7 +5,9 @@ const CELL_SIZE = 20;
 let ws = null;
 let gameState = null;
 let wins = {1: 0, 2: 0};
+let names = {1: "Player 1", 2: "Player 2"};
 let playerId = 1;
+let playerName = "";
 let gameMode = "vs_ai";
 let aiDifficulty = 5;
 let lastSnakeLength = 0;
@@ -14,6 +16,7 @@ let lastOpponentLength = 0;
 // DOM elements
 const setupPanel = document.getElementById("setup");
 const gamePanel = document.getElementById("game");
+const playerNameInput = document.getElementById("playerName");
 const serverUrlInput = document.getElementById("serverUrl");
 const gameModeSelect = document.getElementById("gameMode");
 const difficultySection = document.getElementById("difficultySection");
@@ -46,6 +49,7 @@ function updateDifficultyDisplay() {
 function connect() {
     const baseUrl = serverUrlInput.value.trim();
     gameMode = gameModeSelect.value;
+    playerName = playerNameInput.value.trim() || "Player";
 
     if (!baseUrl) {
         alert("Please enter a server URL");
@@ -130,6 +134,9 @@ function handleMessage(data) {
             if (data.wins) {
                 wins = data.wins;
             }
+            if (data.names) {
+                names = data.names;
+            }
             gameState = data.game;
             updateCanvas();
             updateScores();
@@ -144,8 +151,13 @@ function handleMessage(data) {
         case "gameover":
             if (data.wins) {
                 wins = data.wins;
-                updateScores();
             }
+            if (data.names) {
+                names = data.names;
+            }
+            updateScores();
+            const opponentId = playerId === 1 ? 2 : 1;
+            const opponentName = names[opponentId] || "Opponent";
             let msg;
             if (data.winner === null) {
                 msg = "Game Over - Draw!";
@@ -154,7 +166,7 @@ function handleMessage(data) {
                 msg = "🏆 You Win!";
                 sfx.win();
             } else {
-                msg = gameMode === "vs_ai" ? "Game Over - AI Wins" : "Game Over - You Lose";
+                msg = `Game Over - ${opponentName} Wins`;
                 sfx.death();
             }
             setStatus(msg, "connected");
@@ -166,7 +178,7 @@ function handleMessage(data) {
 
 function sendReady() {
     if (ws && ws.readyState === WebSocket.OPEN) {
-        const msg = { action: "ready", mode: gameMode };
+        const msg = { action: "ready", mode: gameMode, name: playerName };
         if (gameMode === "vs_ai") {
             msg.ai_difficulty = aiDifficulty;
         }
@@ -328,9 +340,10 @@ function updateScores() {
     const myWins = wins[playerId] || 0;
     const opponentId = playerId === 1 ? 2 : 1;
     const opponentWins = wins[opponentId] || 0;
+    const opponentName = names[opponentId] || "Opponent";
     
     let html = "";
     html += `<div class="score player1">You: ${myWins} wins</div>`;
-    html += `<div class="score player2">Opponent: ${opponentWins} wins</div>`;
+    html += `<div class="score player2">${opponentName}: ${opponentWins} wins</div>`;
     scoresDiv.innerHTML = html;
 }
