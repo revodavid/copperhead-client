@@ -14,6 +14,8 @@ let lastSnakeLength = 0;
 let lastOpponentLength = 0;
 let isObserver = false;
 let roomId = null;
+let activeRooms = [];
+let currentRoomIndex = 0;
 
 // DOM elements
 const setupPanel = document.getElementById("setup");
@@ -159,6 +161,17 @@ function handleMessage(data) {
             setStatus(`Observing Room ${roomId}`, "connected");
             updateCanvas();
             updateScores();
+            updateObserverInfo();
+            // Request room list
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ action: "get_rooms" }));
+            }
+            break;
+        case "room_list":
+            // Update active rooms list for observer
+            activeRooms = data.rooms || [];
+            currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
+            updateObserverInfo();
             break;
         case "state":
             // Sound effects only for players, not observers
@@ -279,8 +292,23 @@ function handleKeydown(event) {
         return;
     }
 
-    // Observers can't control the game
-    if (isObserver) return;
+    // Observers can use Left/Right to switch rooms
+    if (isObserver) {
+        if (event.code === "ArrowLeft" || event.code === "ArrowRight") {
+            if (activeRooms.length > 1) {
+                if (event.code === "ArrowLeft") {
+                    currentRoomIndex = (currentRoomIndex - 1 + activeRooms.length) % activeRooms.length;
+                } else {
+                    currentRoomIndex = (currentRoomIndex + 1) % activeRooms.length;
+                }
+                const newRoom = activeRooms[currentRoomIndex];
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ action: "switch_room", room_id: newRoom.room_id }));
+                }
+            }
+        }
+        return;
+    }
 
     // Number keys 1-9, 0 set AI difficulty (0 = level 10) - works anytime in vs_ai mode
     if (gameMode === "vs_ai") {
@@ -438,4 +466,39 @@ function updateScores() {
         </tbody>
     </table>`;
     scoresDiv.innerHTML = html;
+}
+
+function updateObserverInfo() {
+    if (!isObserver) return;
+    
+    // Update the instructions panel to show observer info
+    const instructionsDiv = document.getElementById("instructions");
+    if (!instructionsDiv) return;
+    
+    let roomListHtml = "";
+    if (activeRooms.length > 0) {
+        roomListHtml = activeRooms.map(r => {
+            const isCurrent = r.room_id === roomId;
+            const p1 = r.names[1] || "Player 1";
+            const p2 = r.names[2] || "Player 2";
+            return `<div class="${isCurrent ? 'current-room' : ''}">Room ${r.room_id}: ${p1} vs ${p2}</div>`;
+        }).join("");
+    } else {
+        roomListHtml = "<div>No active games</div>";
+    }
+    
+    instructionsDiv.innerHTML = `
+        <h3>👁️ Observer Mode</h3>
+        <div class="instruction-section">
+            <h4>Controls</h4>
+            <ul>
+                <li><strong>←/→</strong>: Switch between games</li>
+                <li><strong>ESC</strong>: Return to menu</li>
+            </ul>
+        </div>
+        <div class="instruction-section">
+            <h4>Active Games (${activeRooms.length})</h4>
+            <div class="room-list">${roomListHtml}</div>
+        </div>
+    `;
 }
