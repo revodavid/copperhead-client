@@ -380,10 +380,17 @@ function updateCanvas() {
         ctx.fill();
     }
 
-    // Draw snakes - green for local player, red for opponent
+    // Draw snakes
+    // For observers: player 1 = green, player 2 = red
+    // For players: local player = green, opponent = red
     for (const [pid, snake] of Object.entries(gameState.snakes)) {
-        const isMe = parseInt(pid) === playerId;
-        const color = isMe 
+        let useGreen;
+        if (isObserver) {
+            useGreen = parseInt(pid) === 1;
+        } else {
+            useGreen = parseInt(pid) === playerId;
+        }
+        const color = useGreen 
             ? { body: "#27ae60", head: "#2ecc71" }
             : { body: "#c0392b", head: "#e74c3c" };
         
@@ -406,16 +413,28 @@ function updateCanvas() {
 }
 
 function updateScores() {
-    const myWins = wins[playerId] || 0;
-    const opponentId = playerId === 1 ? 2 : 1;
-    const opponentWins = wins[opponentId] || 0;
-    const opponentName = names[opponentId] || "Opponent";
+    let player1Name, player2Name, player1Wins, player2Wins;
+    
+    if (isObserver) {
+        // Observer sees both players by their actual names
+        player1Name = names[1] || "Player 1";
+        player2Name = names[2] || "Player 2";
+        player1Wins = wins[1] || 0;
+        player2Wins = wins[2] || 0;
+    } else {
+        // Player sees themselves first, opponent second
+        const opponentId = playerId === 1 ? 2 : 1;
+        player1Name = playerName;
+        player2Name = names[opponentId] || "Opponent";
+        player1Wins = wins[playerId] || 0;
+        player2Wins = wins[opponentId] || 0;
+    }
     
     let html = `<table class="scores-table">
         <thead><tr><th colspan="2">Games Won</th></tr></thead>
         <tbody>
-            <tr class="player1"><td>${playerName}</td><td>${myWins}</td></tr>
-            <tr class="player2"><td>${opponentName}</td><td>${opponentWins}</td></tr>
+            <tr class="player1"><td>${player1Name}</td><td>${player1Wins}</td></tr>
+            <tr class="player2"><td>${player2Name}</td><td>${player2Wins}</td></tr>
         </tbody>
     </table>`;
     scoresDiv.innerHTML = html;
