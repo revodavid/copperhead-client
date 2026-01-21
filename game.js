@@ -173,6 +173,9 @@ function handleMessage(data) {
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Play Again";
             break;
+        case "waiting":
+            setStatus(data.message || "Waiting for opponent...", "connected");
+            break;
     }
 }
 
