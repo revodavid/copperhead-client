@@ -22,10 +22,11 @@
                 <div class="form-group">
                     <label for="serverUrlSelect">Server URL:</label>
                     <select id="serverUrlSelect">
-                        <option value="ws://localhost:8000/ws/" selected>Local (localhost:8000)</option>
-                        <option value="wss://bookish-fortnight-p7wqx7rw7h96w7-8000.app.github.dev/ws">Codespaces (bookish-fortnight)</option>
+                        <option value="local" selected>Local (localhost:8000)</option>
+                        <option value="codespaces">Codespaces</option>
                         <option value="custom">Custom...</option>
                     </select>
+                    <input type="text" id="codespaceName" class="hidden" placeholder="e.g., bookish-fortnight-abc123xyz">
                     <input type="text" id="serverUrlCustom" class="hidden" placeholder="wss://your-server/ws">
                 </div>
             </div>
