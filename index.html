@@ -11,7 +11,7 @@
         <div id="setup" class="panel">
             <div class="logo-section">
                 <h1>🐍 CopperHead</h1>
-                <p class="tagline">Multiplayer Snake Game</p>
+                <p class="tagline">Compete against human and AI players in a knockout Snake Game tournament!</p>
             </div>
             
             <div class="setup-options">
@@ -22,8 +22,8 @@
                 <div class="form-group">
                     <label for="serverUrlSelect">Server URL:</label>
                     <select id="serverUrlSelect">
-                        <option value="wss://bookish-fortnight-p7wqx7rw7h96w7-8000.app.github.dev/ws" selected>Codespaces (bookish-fortnight)</option>
-                        <option value="ws://localhost:8000/ws/">Local (localhost:8000)</option>
+                        <option value="ws://localhost:8000/ws/" selected>Local (localhost:8000)</option>
+                        <option value="wss://bookish-fortnight-p7wqx7rw7h96w7-8000.app.github.dev/ws">Codespaces (bookish-fortnight)</option>
                         <option value="custom">Custom...</option>
                     </select>
                     <input type="text" id="serverUrlCustom" class="hidden" placeholder="wss://your-server/ws">
@@ -32,45 +32,60 @@
 
             <div class="game-modes">
                 <div class="mode-card">
+                    <h3>🎮 Play A Game</h3>
+                    <p>Join an open match</p>
+                    <button id="playBtn" disabled>Play A Game</button>
+                    <p class="mode-status" id="play-status">Checking server...</p>
+                </div>
+                
+                <div class="mode-card competition-status-card">
+                    <h3>🏆 Competition Status</h3>
+                    <div id="competition-round-info">--</div>
+                    <div id="competition-matches">
+                        <table class="matches-table" id="entry-matches-table">
+                            <tbody id="entry-matches-body">
+                                <tr><td colspan="3">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button id="addAiBtn" disabled>Add AI Player</button>
+                </div>
+                
+                <div class="mode-card">
                     <h3>👁️ Observe</h3>
                     <p>Watch games in progress</p>
-                    <button id="observeBtn">Observe a Game</button>
+                    <button id="observeBtn">Observe Games</button>
                 </div>
-                
-                <div class="mode-card">
-                    <h3>🤖 Single Player</h3>
-                    <p>Play vs CopperBot AI</p>
-                    <div class="form-group">
-                        <label for="aiDifficultySelect">AI Level:</label>
-                        <select id="aiDifficultySelect">
-                            <option value="1">1 - Beginner</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5" selected>5 - Normal</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10 - Expert</option>
-                        </select>
-                    </div>
-                    <button id="singlePlayerBtn">Play vs AI</button>
+            </div>
+            
+            <div id="server-settings" class="server-settings">
+                <h4>⚙️ Server Settings</h4>
+                <div id="server-settings-content" class="settings-grid-compact">
+                    <span class="setting-label">Grid Size:</span>
+                    <span id="setting-grid">--</span>
+                    <span class="setting-label">Speed:</span>
+                    <span id="setting-speed">--</span>
+                    <span class="setting-label">Points to Win:</span>
+                    <span id="setting-points">--</span>
                 </div>
-                
-                <div class="mode-card">
-                    <h3>👥 Two Player</h3>
-                    <p>Play vs another human</p>
-                    <button id="twoPlayerBtn">Find Opponent</button>
+                <div id="server-unavailable" class="server-unavailable hidden">
+                    ⚠️ Server unavailable
                 </div>
             </div>
         </div>
 
         <div id="game" class="panel hidden">
+            <div class="logo-section game-header">
+                <h1>🐍 CopperHead</h1>
+            </div>
             <div id="status">Waiting to connect...</div>
             <div id="game-area">
                 <div id="left-panel">
                     <div id="scores"></div>
+                    <div id="match-info" class="match-info hidden">
+                        <div id="round-info"></div>
+                        <div id="points-to-win-info"></div>
+                    </div>
                     <button id="readyBtn" class="hidden">Ready</button>
                 </div>
                 <canvas id="gameCanvas"></canvas>
@@ -78,7 +93,7 @@
                     <h3>🎮 How to Play</h3>
                     <div class="instruction-section">
                         <h4>Goal</h4>
-                        <p id="goal-text">Eat food to grow your snake and increase your score. Don't hit the walls or yourself!</p>
+                        <p id="goal-text">Outlast your opponent! Avoid walls, yourself, and the enemy snake.</p>
                     </div>
                     <div class="instruction-section">
                         <h4>Controls</h4>
@@ -91,9 +106,7 @@
                     </div>
                     <div class="instruction-section">
                         <h4>Legend</h4>
-                        <div class="legend-row"><span class="legend-box player1-color"></span> You</div>
-                        <div class="legend-row"><span class="legend-box player2-color"></span> Opponent</div>
-                        <div class="legend-row"><span class="legend-box food-color"></span> Food</div>
+                        <div class="legend-row"><span class="legend-box food-color"></span> Food (Apple)</div>
                     </div>
                 </div>
             </div>

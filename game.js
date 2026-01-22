@@ -8,14 +8,29 @@ let wins = {1: 0, 2: 0};
 let names = {1: "Player 1", 2: "Player 2"};
 let playerId = 1;
 let playerName = "";
-let gameMode = "vs_ai";
-let aiDifficulty = 5;
+let gameMode = "two_player";
 let lastSnakeLength = 0;
 let lastOpponentLength = 0;
 let isObserver = false;
 let roomId = null;
 let activeRooms = [];
 let currentRoomIndex = 0;
+let statusPollInterval = null;
+let hasOpenMatches = false;
+
+// Competition mode state
+let competitionState = null;
+let currentRound = 0;
+let totalRounds = 0;
+let pointsToWin = 5;
+let observerFollowingPlayer = null; // Track winner name to follow between rounds
+let observerMatchComplete = false; // Track if we're waiting for next round
+let serverSettings = {
+    gridWidth: 30,
+    gridHeight: 20,
+    speed: 0.15,
+    pointsToWin: 5
+};
 
 // DOM elements
 const setupPanel = document.getElementById("setup");
@@ -23,10 +38,12 @@ const gamePanel = document.getElementById("game");
 const playerNameInput = document.getElementById("playerName");
 const serverUrlSelect = document.getElementById("serverUrlSelect");
 const serverUrlCustom = document.getElementById("serverUrlCustom");
-const aiDifficultySelect = document.getElementById("aiDifficultySelect");
+const playBtn = document.getElementById("playBtn");
+const playStatus = document.getElementById("play-status");
+const addAiBtn = document.getElementById("addAiBtn");
 const observeBtn = document.getElementById("observeBtn");
-const singlePlayerBtn = document.getElementById("singlePlayerBtn");
-const twoPlayerBtn = document.getElementById("twoPlayerBtn");
+const competitionRoundInfo = document.getElementById("competition-round-info");
+const entryMatchesBody = document.getElementById("entry-matches-body");
 const statusDiv = document.getElementById("status");
 const scoresDiv = document.getElementById("scores");
 const readyBtn = document.getElementById("readyBtn");
@@ -34,15 +51,38 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const goalText = document.getElementById("goal-text");
 const instructionsDiv = document.getElementById("instructions");
+const matchInfoDiv = document.getElementById("match-info");
+const roundInfoDiv = document.getElementById("round-info");
+const pointsToWinInfoDiv = document.getElementById("points-to-win-info");
 const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "";
 
 // Event listeners
+playBtn.addEventListener("click", () => connectWithMode("two_player"));
+addAiBtn.addEventListener("click", addAiPlayer);
 observeBtn.addEventListener("click", observe);
-singlePlayerBtn.addEventListener("click", () => connectWithMode("vs_ai"));
-twoPlayerBtn.addEventListener("click", () => connectWithMode("two_player"));
 readyBtn.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
 serverUrlSelect.addEventListener("change", updateServerUrlUI);
+serverUrlCustom.addEventListener("input", debounce(updateCustomServerUrl, 500));
+serverUrlCustom.addEventListener("change", updateCustomServerUrl);
+
+// Fetch server settings and status on load
+fetchServerStatus();
+startStatusPolling();
+
+// Debounce helper for custom URL input
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+function updateCustomServerUrl() {
+    showLoadingState();
+    fetchServerStatus();
+}
 
 function updateServerUrlUI() {
     if (serverUrlSelect.value === "custom") {
@@ -50,6 +90,268 @@ function updateServerUrlUI() {
         serverUrlCustom.focus();
     } else {
         serverUrlCustom.classList.add("hidden");
+    }
+    // Show loading state and refetch status when server changes
+    showLoadingState();
+    fetchServerStatus();
+}
+
+function showLoadingState() {
+    if (playBtn) playBtn.disabled = true;
+    if (addAiBtn) addAiBtn.disabled = true;
+    if (playStatus) {
+        playStatus.textContent = "Checking server...";
+        playStatus.style.color = "#888";
+    }
+    if (competitionRoundInfo) competitionRoundInfo.textContent = "Loading...";
+    if (entryMatchesBody) entryMatchesBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+}
+
+function startStatusPolling() {
+    // Poll server status every 2 seconds while on entry screen
+    statusPollInterval = setInterval(() => {
+        if (!setupPanel.classList.contains("hidden")) {
+            fetchServerStatus();
+        }
+    }, 2000);
+}
+
+function stopStatusPolling() {
+    if (statusPollInterval) {
+        clearInterval(statusPollInterval);
+        statusPollInterval = null;
+    }
+}
+
+async function fetchServerStatus() {
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        
+        // Fetch room status
+        const statusResponse = await fetch(httpUrl + "/status");
+        if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            if (statusData.speed) {
+                serverSettings.speed = statusData.speed;
+            }
+            updateEntryScreenStatus(statusData);
+        }
+        
+        // Fetch competition info
+        const compResponse = await fetch(httpUrl + "/competition");
+        if (compResponse.ok) {
+            const compData = await compResponse.json();
+            serverSettings.pointsToWin = compData.points_to_win || 5;
+            currentRound = compData.round || 0;
+            totalRounds = compData.total_rounds || 1;
+            window.lastCompetitionData = compData;  // Store for match table display
+            updateCompetitionDisplay(compData);
+        }
+        
+        updateServerSettingsDisplay(true);
+    } catch (e) {
+        // Server not reachable
+        if (playStatus) playStatus.textContent = "Server unavailable";
+        if (playBtn) playBtn.disabled = true;
+        if (addAiBtn) addAiBtn.disabled = true;
+        if (observeBtn) observeBtn.disabled = true;
+        if (competitionRoundInfo) competitionRoundInfo.textContent = "--";
+        if (entryMatchesBody) entryMatchesBody.innerHTML = "<tr><td colspan='3'>Cannot connect to server</td></tr>";
+        updateServerSettingsDisplay(false);
+    }
+}
+
+function updateEntryScreenStatus(statusData) {
+    const rooms = statusData.rooms || [];
+    const openSlots = statusData.open_slots || 0;
+    const arenas = statusData.arenas || 1;
+    hasOpenMatches = openSlots > 0;
+    const hasAnyMatches = rooms.length > 0;
+    
+    // Update Play button - only enabled if there's an open slot
+    if (playBtn) {
+        playBtn.disabled = !hasOpenMatches;
+    }
+    if (playStatus) {
+        if (hasOpenMatches) {
+            playStatus.textContent = `${openSlots} slot${openSlots > 1 ? 's' : ''} available`;
+            playStatus.style.color = "#2ecc71";
+        } else if (hasAnyMatches) {
+            playStatus.textContent = "All slots filled";
+            playStatus.style.color = "#888";
+        } else {
+            playStatus.textContent = "Waiting for players";
+            playStatus.style.color = "#888";
+        }
+    }
+    
+    // Update Add AI button - enabled if there are open slots
+    if (addAiBtn) {
+        addAiBtn.disabled = !hasOpenMatches;
+    }
+    
+    // Update Observe button - enabled if any matches exist (active or completed)
+    if (observeBtn) {
+        observeBtn.disabled = !hasAnyMatches;
+    }
+    
+    // Update matches table - show all matches in current round
+    if (entryMatchesBody) {
+        let rows = [];
+        
+        // Check if we have competition data with bye info
+        const compState = window.lastCompetitionData?.state || "waiting_for_players";
+        const byePlayer = window.lastCompetitionData?.bye_player;
+        const pointsToWin = window.lastCompetitionData?.points_to_win || 5;
+        
+        // Add rows for each room/match
+        for (const room of rooms) {
+            const connectedPlayers = room.players || [];
+            const p1Connected = connectedPlayers.includes(1);
+            const p2Connected = connectedPlayers.includes(2);
+            
+            // Get names - use actual name if connected or match complete, otherwise "Waiting..."
+            const p1Name = room.names?.[1] || room.names?.["1"];
+            const p2Name = room.names?.[2] || room.names?.["2"];
+            
+            // Show "Waiting..." only if player not connected AND match not complete AND name is default
+            const isDefaultP1 = !p1Name || p1Name === "Player 1";
+            const isDefaultP2 = !p2Name || p2Name === "Player 2";
+            
+            const p1 = (p1Connected || room.match_complete || !isDefaultP1) ? (p1Name || "Player 1") : "Waiting...";
+            const p2 = (p2Connected || room.match_complete || !isDefaultP2) ? (p2Name || "Player 2") : "Waiting...";
+            
+            const s1 = room.wins?.[1] || room.wins?.["1"] || 0;
+            const s2 = room.wins?.[2] || room.wins?.["2"] || 0;
+            
+            // Check if match is complete (from server flag or score)
+            const matchComplete = room.match_complete || s1 >= pointsToWin || s2 >= pointsToWin;
+            const p1Won = s1 >= pointsToWin;
+            const p2Won = s2 >= pointsToWin;
+            
+            // Format scores with green for winner
+            const s1Style = p1Won ? 'style="color: #2ecc71; font-weight: bold;"' : '';
+            const s2Style = p2Won ? 'style="color: #2ecc71; font-weight: bold;"' : '';
+            
+            // Add visual indicator for completed matches
+            const rowClass = matchComplete ? 'match-complete-row' : '';
+            
+            rows.push(`<tr class="${rowClass}">
+                <td>${p1}</td>
+                <td class="score"><span ${s1Style}>${s1}</span> - <span ${s2Style}>${s2}</span></td>
+                <td>${p2}</td>
+            </tr>`);
+        }
+        
+        // Add Bye row if there's a bye player this round
+        if (byePlayer && compState === "in_progress") {
+            rows.push(`<tr class="bye-row">
+                <td colspan="3" style="text-align: center; color: #f39c12;">🎫 Bye: ${byePlayer}</td>
+            </tr>`);
+        }
+        
+        // If waiting for players, show empty slots for arenas without rooms
+        if (compState === "waiting_for_players") {
+            for (let i = rooms.length; i < arenas; i++) {
+                rows.push(`<tr>
+                    <td>Waiting...</td>
+                    <td class="score">--</td>
+                    <td>Waiting...</td>
+                </tr>`);
+            }
+        }
+        
+        // If no rows but competition is in progress, rooms may have been cleared between rounds
+        if (rows.length === 0 && compState === "in_progress") {
+            rows.push(`<tr><td colspan="3" style="text-align: center;">Starting next round...</td></tr>`);
+        }
+        
+        // If no rows and waiting for players, show all empty slots
+        if (rows.length === 0 && compState === "waiting_for_players") {
+            for (let i = 0; i < arenas; i++) {
+                rows.push(`<tr>
+                    <td>Waiting...</td>
+                    <td class="score">--</td>
+                    <td>Waiting...</td>
+                </tr>`);
+            }
+        }
+        
+        entryMatchesBody.innerHTML = rows.join("");
+    }
+}
+
+function updateCompetitionDisplay(compData) {
+    if (competitionRoundInfo) {
+        const round = compData.round || 1;
+        const totalRounds = compData.total_rounds || 1;
+        
+        if (compData.state === "waiting_for_players") {
+            competitionRoundInfo.textContent = `Waiting for players (${compData.players}/${compData.required})`;
+        } else if (compData.state === "complete") {
+            if (compData.champion) {
+                competitionRoundInfo.textContent = `🏆 Champion: ${compData.champion}`;
+            } else {
+                competitionRoundInfo.textContent = `Competition Complete`;
+            }
+        } else {
+            competitionRoundInfo.textContent = `Round ${round} of ${totalRounds}`;
+        }
+    }
+}
+
+function updateServerSettingsDisplay(available = true) {
+    const gridEl = document.getElementById("setting-grid");
+    const speedEl = document.getElementById("setting-speed");
+    const pointsEl = document.getElementById("setting-points");
+    const contentEl = document.getElementById("server-settings-content");
+    const unavailableEl = document.getElementById("server-unavailable");
+    
+    if (available) {
+        if (contentEl) contentEl.classList.remove("hidden");
+        if (unavailableEl) unavailableEl.classList.add("hidden");
+        if (gridEl) gridEl.textContent = `${serverSettings.gridWidth}x${serverSettings.gridHeight}`;
+        if (speedEl) speedEl.textContent = `${serverSettings.speed}s`;
+        if (pointsEl) pointsEl.textContent = serverSettings.pointsToWin;
+    } else {
+        if (contentEl) contentEl.classList.add("hidden");
+        if (unavailableEl) unavailableEl.classList.remove("hidden");
+    }
+}
+
+async function addAiPlayer() {
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+    
+    // Spawn a CopperBot via WebSocket connection
+    addAiBtn.disabled = true;
+    addAiBtn.textContent = "Adding AI...";
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(httpUrl + "/add_bot", { method: "POST" });
+        if (response.ok) {
+            addAiBtn.textContent = "AI Added!";
+            setTimeout(() => {
+                addAiBtn.textContent = "Add AI Player";
+                fetchServerStatus();
+            }, 1500);
+        } else {
+            addAiBtn.textContent = "Failed";
+            setTimeout(() => {
+                addAiBtn.textContent = "Add AI Player";
+                addAiBtn.disabled = !hasOpenMatches;
+            }, 1500);
+        }
+    } catch (e) {
+        addAiBtn.textContent = "Error";
+        setTimeout(() => {
+            addAiBtn.textContent = "Add AI Player";
+            addAiBtn.disabled = !hasOpenMatches;
+        }, 1500);
     }
 }
 
@@ -63,7 +365,6 @@ function getServerUrl() {
 function connectWithMode(mode) {
     const baseUrl = getServerUrl();
     gameMode = mode;
-    aiDifficulty = parseInt(aiDifficultySelect.value);
     playerName = playerNameInput.value.trim() || "Human";
     isObserver = false;
 
@@ -72,6 +373,7 @@ function connectWithMode(mode) {
         return;
     }
 
+    stopStatusPolling();
     disableAllButtons();
     setStatus("Connecting...", "");
     
@@ -90,6 +392,7 @@ function observe() {
         return;
     }
 
+    stopStatusPolling();
     disableAllButtons();
     setStatus("Connecting as observer...", "");
     
@@ -98,15 +401,15 @@ function observe() {
 }
 
 function disableAllButtons() {
-    observeBtn.disabled = true;
-    singlePlayerBtn.disabled = true;
-    twoPlayerBtn.disabled = true;
+    if (playBtn) playBtn.disabled = true;
+    if (addAiBtn) addAiBtn.disabled = true;
+    if (observeBtn) observeBtn.disabled = true;
 }
 
 function enableAllButtons() {
-    observeBtn.disabled = false;
-    singlePlayerBtn.disabled = false;
-    twoPlayerBtn.disabled = false;
+    if (observeBtn) observeBtn.disabled = false;
+    // Play and Add AI buttons are controlled by server status
+    fetchServerStatus();
 }
 
 function connectWebSocket(wsUrl) {
@@ -124,7 +427,7 @@ function connectWebSocket(wsUrl) {
         
         if (isObserver) {
             readyBtn.classList.add("hidden");
-            setStatus("Observing... Waiting for game", "connected");
+            setStatus("Waiting for match to begin...", "connected");
         } else {
             readyBtn.classList.remove("hidden");
             restorePlayerInstructions();
@@ -142,6 +445,15 @@ function connectWebSocket(wsUrl) {
             setStatus("No active game to observe", "error");
         } else if (event.code === 4002) {
             setStatus("Server full - try again later", "error");
+        } else if (isObserver) {
+            // For observers, try to reconnect after a brief delay
+            setStatus("Connection lost - reconnecting...", "error");
+            setTimeout(() => {
+                if (isObserver) {
+                    observe();
+                }
+            }, 2000);
+            return;
         } else {
             setStatus("Disconnected", "error");
         }
@@ -178,7 +490,13 @@ function handleMessage(data) {
             if (data.wins) wins = data.wins;
             if (data.names) names = data.names;
             gameState = data.game;
-            setStatus(`Observing Room ${roomId}`, "connected");
+            const p1Name = names[1] || names["1"] || "Player 1";
+            const p2Name = names[2] || names["2"] || "Player 2";
+            if (gameState && gameState.running) {
+                setStatus(`Round ${currentRound || 1} Match in Progress: ${p1Name} vs ${p2Name}`, "playing");
+            } else {
+                setStatus(`Waiting for match to begin...`, "connected");
+            }
             updateCanvas();
             updateScores();
             updateObserverInfo();
@@ -189,9 +507,30 @@ function handleMessage(data) {
             break;
         case "room_list":
             // Update active rooms list for observer
+            const oldRound = currentRound;
             activeRooms = data.rooms || [];
-            currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
-            if (currentRoomIndex < 0) currentRoomIndex = 0;
+            
+            // If we were following a winner and this is a new round, find their room
+            if (observerFollowingPlayer && observerMatchComplete) {
+                const winnerRoom = activeRooms.find(r => 
+                    r.names && (r.names[1] === observerFollowingPlayer || r.names[2] === observerFollowingPlayer)
+                );
+                if (winnerRoom && winnerRoom.room_id !== roomId) {
+                    // Switch to winner's new room
+                    roomId = winnerRoom.room_id;
+                    currentRoomIndex = activeRooms.findIndex(r => r.room_id === roomId);
+                    observerMatchComplete = false;
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ action: "switch_room", room_id: roomId }));
+                    }
+                    const p1 = winnerRoom.names?.[1] || "Player 1";
+                    const p2 = winnerRoom.names?.[2] || "Player 2";
+                    setStatus(`Round ${currentRound} Match in Progress: ${p1} vs ${p2}`, "playing");
+                }
+            } else {
+                currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
+                if (currentRoomIndex < 0) currentRoomIndex = 0;
+            }
             updateObserverInfo();
             break;
         case "state":
@@ -220,16 +559,30 @@ function handleMessage(data) {
             if (data.room_id) {
                 roomId = data.room_id;
             }
+            // Update server settings from game state
+            if (data.game && data.game.grid) {
+                serverSettings.gridWidth = data.game.grid.width;
+                serverSettings.gridHeight = data.game.grid.height;
+            }
+            if (data.points_to_win) {
+                pointsToWin = data.points_to_win;
+                serverSettings.pointsToWin = pointsToWin;
+            }
             gameState = data.game;
             updateCanvas();
             updateScores();
+            updateMatchInfo();
             if (isObserver && gameState.running) {
-                setStatus(`Observing Room ${roomId}`, "playing");
+                const obsP1 = names[1] || names["1"] || "Player 1";
+                const obsP2 = names[2] || names["2"] || "Player 2";
+                setStatus(`Round ${currentRound || 1} Match in Progress: ${obsP1} vs ${obsP2}`, "playing");
             }
             break;
         case "start":
             if (isObserver) {
-                setStatus(`Observing Room ${roomId} - Game in progress`, "playing");
+                const startP1 = names[1] || names["1"] || "Player 1";
+                const startP2 = names[2] || names["2"] || "Player 2";
+                setStatus(`Round ${currentRound} Match in Progress: ${startP1} vs ${startP2}`, "playing");
             } else {
                 setStatus("Game started!", "playing");
                 readyBtn.classList.add("hidden");
@@ -245,22 +598,40 @@ function handleMessage(data) {
             if (data.names) {
                 names = data.names;
             }
+            if (data.points_to_win) {
+                pointsToWin = data.points_to_win;
+            }
             updateScores();
+            updateMatchInfo();
+            
             if (isObserver) {
                 const winnerName = data.winner ? (names[data.winner] || "Unknown") : "No one";
-                setStatus(`Game Over - ${winnerName} wins! Waiting for next game...`, "connected");
+                setStatus(`${winnerName} Wins the Game! Next game starting soon...`, "connected");
+                
+                // Request updated room list periodically
+                const roomUpdateInterval = setInterval(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ action: "get_rooms" }));
+                    } else {
+                        clearInterval(roomUpdateInterval);
+                    }
+                }, 1000);
+                // Clear interval after 10 seconds
+                setTimeout(() => clearInterval(roomUpdateInterval), 10000);
             } else {
                 const opponentId = playerId === 1 ? 2 : 1;
                 const opponentName = names[opponentId] || "Opponent";
+                const myWins = wins[playerId] || 0;
+                const oppWins = wins[opponentId] || 0;
                 let msg;
                 if (data.winner === null) {
-                    msg = "Game Over - Draw!";
+                    msg = `Draw! Score: ${myWins}-${oppWins} (first to ${pointsToWin})`;
                     sfx.lose();
                 } else if (data.winner === playerId) {
-                    msg = "🏆 You Win!";
+                    msg = `🏆 You Win! Score: ${myWins}-${oppWins}`;
                     sfx.win();
                 } else {
-                    msg = `Game Over - ${opponentName} Wins`;
+                    msg = `${opponentName} Wins - Score: ${myWins}-${oppWins}`;
                     sfx.death();
                 }
                 setStatus(msg, "connected");
@@ -270,6 +641,129 @@ function handleMessage(data) {
             break;
         case "waiting":
             setStatus(data.message || "Waiting for opponent...", "connected");
+            break;
+            
+        // Competition mode messages
+        case "competition_status":
+            competitionState = data.state;
+            currentRound = data.round || 0;
+            totalRounds = data.total_rounds || 1;
+            if (data.pairings) {
+                activeRooms = data.pairings.map(p => ({
+                    room_id: p.arena,
+                    names: { 1: p.player1.name, 2: p.player2.name },
+                    wins: { 1: 0, 2: 0 }
+                }));
+            }
+            updateMatchInfo();
+            updateObserverInfo();
+            setStatus(`Competition Round ${currentRound} of ${totalRounds}`, "connected");
+            break;
+            
+        case "match_assigned":
+            roomId = data.room_id;
+            playerId = data.player_id;
+            pointsToWin = data.points_to_win || 5;
+            serverSettings.pointsToWin = pointsToWin;
+            setStatus(`Match starting! vs ${data.opponent}`, "connected");
+            updateMatchInfo();
+            break;
+            
+        case "match_complete":
+            // Update scores with final score
+            if (data.final_score) {
+                wins = data.final_score;
+            }
+            updateScores();
+            
+            const matchWinnerName = data.winner?.name || "Unknown";
+            const matchWinnerId = data.winner?.player_id;
+            const loserId = matchWinnerId === 1 ? 2 : 1;
+            const loserName = names[loserId] || "Unknown";
+            const score1 = data.final_score?.[1] || 0;
+            const score2 = data.final_score?.[2] || 0;
+            const remainingMatches = data.remaining_matches || 0;
+            
+            if (isObserver) {
+                // Track winner to follow to next round
+                observerFollowingPlayer = matchWinnerName;
+                observerMatchComplete = true;
+                
+                // Show green status for match complete
+                let matchMsg = `Round ${currentRound} Match Complete: ${matchWinnerName} Wins! Waiting for next round to begin...`;
+                setStatus(matchMsg, "match-complete");
+            } else {
+                // Check if current player won or lost
+                if (matchWinnerId === playerId) {
+                    setStatus(`🏆 Match Victory! You win ${score1}-${score2}! ` + 
+                        (remainingMatches > 0 ? `Waiting for ${remainingMatches} match${remainingMatches > 1 ? 'es' : ''}.` : 'Round complete.'), 
+                        "connected");
+                    sfx.win();
+                } else {
+                    setStatus(`Match Over - ${matchWinnerName} wins ${score1}-${score2}`, "connected");
+                    sfx.lose();
+                }
+                // Reset for next match
+                wins = {1: 0, 2: 0};
+                readyBtn.classList.remove("hidden");
+                readyBtn.textContent = "Play Again";
+            }
+            updateMatchInfo();
+            break;
+            
+        case "competition_complete":
+            const champion = data.champion?.name || "Unknown";
+            const resetIn = data.reset_in || 10;
+            
+            if (isObserver) {
+                setStatus(`🏆 Competition Champion: ${champion}!`, "connected");
+            } else {
+                setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${resetIn}s...`, "connected");
+                
+                // Start countdown display for players only
+                let countdown = resetIn;
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${countdown}s...`, "connected");
+                    } else {
+                        clearInterval(countdownInterval);
+                        returnToEntryScreen();
+                    }
+                }, 1000);
+            }
+            break;
+            
+        case "round_complete":
+            // Round ended, show winner
+            const roundWinner = data.winner?.name || "Unknown";
+            const nextRound = currentRound + 1;
+            if (isObserver) {
+                setStatus(`Round ${currentRound} Complete: ${roundWinner} Advances to Round ${nextRound}! Next round starting soon...`, "connected");
+            } else {
+                const nextRoundIn = data.next_round_in || 5;
+                setStatus(`Round ${currentRound} complete! ${roundWinner} advances. Next round in ${nextRoundIn}s...`, "connected");
+            }
+            break;
+            
+        case "eliminated":
+            // Player was eliminated from competition
+            setStatus(`Eliminated from competition. Returning to menu...`, "connected");
+            setTimeout(() => {
+                returnToEntryScreen();
+            }, 3000);
+            break;
+            
+        case "lobby_status":
+            setStatus(`Waiting for players: ${data.current}/${data.required}`, "connected");
+            break;
+            
+        case "registered":
+            setStatus(`Registered as ${data.name}. Waiting for competition to start...`, "connected");
+            if (data.competition_status) {
+                serverSettings.pointsToWin = data.competition_status.points_to_win || 5;
+                updateServerSettingsDisplay();
+            }
             break;
     }
 }
@@ -292,31 +786,44 @@ function sendReady() {
                 goalText.textContent = "Outlast your opponent! Avoid walls, yourself, and the enemy snake.";
             }
         }
+        
+        // Show match info
+        pointsToWin = serverSettings.pointsToWin;
+        updateMatchInfo();
     }
+}
+
+function returnToEntryScreen() {
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+    gameState = null;
+    isObserver = false;
+    roomId = null;
+    competitionState = null;
+    currentRound = 0;
+    wins = {1: 0, 2: 0};
+    gamePanel.classList.add("hidden");
+    setupPanel.classList.remove("hidden");
+    enableAllButtons();
+    setStatus("Waiting to connect...", "");
+    restorePlayerInstructions();
+    startStatusPolling();
 }
 
 function handleKeydown(event) {
     // ESC returns to setup screen
     if (event.code === "Escape") {
-        if (ws) {
-            ws.close();
-            ws = null;
-        }
-        gameState = null;
-        isObserver = false;
-        roomId = null;
-        gamePanel.classList.add("hidden");
-        setupPanel.classList.remove("hidden");
-        enableAllButtons();
-        setStatus("Waiting to connect...", "");
+        returnToEntryScreen();
         return;
     }
 
-    // Observers can use Left/Right to switch rooms
+    // Observers can use Up/Down to switch rooms
     if (isObserver) {
-        if (event.code === "ArrowLeft" || event.code === "ArrowRight") {
+        if (event.code === "ArrowUp" || event.code === "ArrowDown") {
             if (activeRooms.length > 1) {
-                if (event.code === "ArrowLeft") {
+                if (event.code === "ArrowUp") {
                     currentRoomIndex = (currentRoomIndex - 1 + activeRooms.length) % activeRooms.length;
                 } else {
                     currentRoomIndex = (currentRoomIndex + 1) % activeRooms.length;
@@ -468,13 +975,35 @@ function updateScores() {
     }
     
     let html = `<table class="scores-table">
-        <thead><tr><th colspan="2">Games Won</th></tr></thead>
+        <thead><tr><th colspan="2">Score</th></tr></thead>
         <tbody>
             <tr class="player1"><td>${player1Name}</td><td>${player1Wins}</td></tr>
             <tr class="player2"><td>${player2Name}</td><td>${player2Wins}</td></tr>
         </tbody>
     </table>`;
     scoresDiv.innerHTML = html;
+}
+
+function updateMatchInfo() {
+    if (!matchInfoDiv) return;
+    
+    // Sync pointsToWin from server settings
+    if (serverSettings.pointsToWin) {
+        pointsToWin = serverSettings.pointsToWin;
+    }
+    
+    if (currentRound > 0 || pointsToWin > 0) {
+        matchInfoDiv.classList.remove("hidden");
+        
+        if (roundInfoDiv) {
+            roundInfoDiv.innerHTML = `Round <span>${currentRound}</span> of <span>${totalRounds}</span>`;
+        }
+        if (pointsToWinInfoDiv) {
+            pointsToWinInfoDiv.innerHTML = `First to <span>${pointsToWin}</span> wins`;
+        }
+    } else {
+        matchInfoDiv.classList.add("hidden");
+    }
 }
 
 function updateObserverInfo() {
@@ -484,35 +1013,71 @@ function updateObserverInfo() {
     const instructionsDiv = document.getElementById("instructions");
     if (!instructionsDiv) return;
     
-    let roomListHtml = "";
+    // Build matches table with live scores
+    const pointsToWin = serverSettings.pointsToWin || 5;
+    const byePlayer = window.lastCompetitionData?.bye_player;
+    
+    let matchRows = [];
     if (activeRooms.length > 0) {
-        roomListHtml = activeRooms.map(r => {
+        matchRows = activeRooms.map(r => {
             const isCurrent = r.room_id === roomId;
-            const p1 = r.names[1] || "Player 1";
-            const p2 = r.names[2] || "Player 2";
-            return `<div class="${isCurrent ? 'current-room' : ''}">Room ${r.room_id}: ${p1} vs ${p2}</div>`;
-        }).join("");
+            const p1 = r.names?.[1] || "Player 1";
+            const p2 = r.names?.[2] || "Player 2";
+            const s1 = r.wins?.[1] || 0;
+            const s2 = r.wins?.[2] || 0;
+            
+            // Check if match is complete
+            const p1Won = s1 >= pointsToWin;
+            const p2Won = s2 >= pointsToWin;
+            
+            const s1Style = p1Won ? 'style="color: #2ecc71; font-weight: bold;"' : '';
+            const s2Style = p2Won ? 'style="color: #2ecc71; font-weight: bold;"' : '';
+            
+            return `<tr class="${isCurrent ? 'current-match' : ''}">
+                <td>${p1}</td>
+                <td class="score"><span ${s1Style}>${s1}</span> - <span ${s2Style}>${s2}</span></td>
+                <td>${p2}</td>
+            </tr>`;
+        });
+    }
+    
+    // Add Bye row if there's a bye player this round
+    if (byePlayer) {
+        matchRows.push(`<tr class="bye-row">
+            <td colspan="3" style="text-align: center; color: #f39c12;">🎫 Bye: ${byePlayer}</td>
+        </tr>`);
+    }
+    
+    let matchesTableHtml = "";
+    if (matchRows.length > 0) {
+        matchesTableHtml = `
+            <table class="matches-table">
+                <tbody>
+                    ${matchRows.join("")}
+                </tbody>
+            </table>`;
     } else {
-        roomListHtml = "<div>No active games</div>";
+        matchesTableHtml = "<div>No active matches</div>";
+    }
+    
+    // Show round info if in competition
+    let roundHtml = "";
+    if (currentRound > 0) {
+        roundHtml = `<div style="margin-bottom: 10px; color: #f39c12;">Round ${currentRound} of ${totalRounds}</div>`;
     }
     
     instructionsDiv.innerHTML = `
         <h3>👁️ Observer Mode</h3>
         <div class="instruction-section">
             <h4>Controls</h4>
-            <div class="key-row"><span class="key">←</span> Previous room</div>
-            <div class="key-row"><span class="key">→</span> Next room</div>
+            <div class="key-row"><span class="key">↑</span> Previous match</div>
+            <div class="key-row"><span class="key">↓</span> Next match</div>
             <div class="key-row"><span class="key">Esc</span> Back to menu</div>
         </div>
         <div class="instruction-section">
-            <h4>Legend</h4>
-            <div class="legend-row"><span class="legend-box player1-color"></span> Player 1</div>
-            <div class="legend-row"><span class="legend-box player2-color"></span> Player 2</div>
-            <div class="legend-row"><span class="legend-box food-color"></span> Food</div>
-        </div>
-        <div class="instruction-section">
-            <h4>Active Games (${activeRooms.length})</h4>
-            <div class="room-list">${roomListHtml}</div>
+            <h4>Current Round Matches</h4>
+            ${roundHtml}
+            ${matchesTableHtml}
         </div>
     `;
 }

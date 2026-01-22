@@ -42,6 +42,15 @@ h1 {
     margin-bottom: 25px;
 }
 
+.logo-section.game-header {
+    margin-bottom: 10px;
+}
+
+.logo-section.game-header h1 {
+    font-size: 1.5em;
+    margin: 0;
+}
+
 .tagline {
     color: #aaa;
     margin: 5px 0 0 0;
@@ -75,6 +84,10 @@ h1 {
     transition: border-color 0.2s, transform 0.2s;
 }
 
+.mode-card.competition-status-card {
+    width: 320px;
+}
+
 .mode-card:hover {
     border-color: #f39c12;
     transform: translateY(-2px);
@@ -100,28 +113,52 @@ h1 {
     width: 100%;
 }
 
+.mode-status {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 8px !important;
+    margin-bottom: 0 !important;
+}
+
+#competition-round-info {
+    color: #f39c12;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#competition-matches {
+    margin-bottom: 15px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+#competition-matches .matches-table {
+    font-size: 0.85em;
+}
+
+#playBtn {
+    background: #27ae60;
+}
+
+#playBtn:hover:not(:disabled) {
+    background: #1e8449;
+}
+
+#addAiBtn {
+    background: #9b59b6;
+    margin-top: 10px;
+}
+
+#addAiBtn:hover:not(:disabled) {
+    background: #7d3c98;
+}
+
 #observeBtn {
     background: #3498db;
 }
 
 #observeBtn:hover {
     background: #2980b9;
-}
-
-#singlePlayerBtn {
-    background: #27ae60;
-}
-
-#singlePlayerBtn:hover {
-    background: #1e8449;
-}
-
-#twoPlayerBtn {
-    background: #9b59b6;
-}
-
-#twoPlayerBtn:hover {
-    background: #7d3c98;
 }
 
 .form-group {
@@ -187,6 +224,11 @@ button:disabled {
     color: #f39c12;
 }
 
+#status.match-complete {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
 #gameCanvas {
     border: 2px solid #f39c12;
     border-radius: 5px;
@@ -206,7 +248,8 @@ button:disabled {
     border: 2px solid #333;
     border-radius: 5px;
     padding: 15px;
-    width: 200px;
+    min-width: 200px;
+    max-width: 280px;
     text-align: left;
 }
 
@@ -367,4 +410,109 @@ input[type="range"] {
 
 #readyBtn {
     width: 100%;
+}
+
+/* Server Settings section */
+.server-settings {
+    margin-top: 25px;
+    padding: 15px;
+    background: #0f0f23;
+    border: 1px solid #333;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.server-settings h4 {
+    margin: 0 0 15px 0;
+    color: #aaa;
+    font-size: 0.95em;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 10px 20px;
+    font-size: 0.85em;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.settings-grid-compact {
+    display: grid;
+    grid-template-columns: auto auto auto auto auto auto;
+    gap: 8px 15px;
+    font-size: 0.85em;
+    justify-content: center;
+}
+
+.settings-grid-compact span:nth-child(even) {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+.server-unavailable {
+    color: #e74c3c;
+    font-size: 0.9em;
+    padding: 10px;
+}
+
+.setting-label {
+    color: #888;
+    text-align: right;
+}
+
+.settings-grid span:nth-child(even) {
+    color: #f39c12;
+    text-align: left;
+    font-weight: bold;
+}
+
+/* Match info section */
+.match-info {
+    background: #0f0f23;
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.85em;
+}
+
+.match-info div {
+    margin: 5px 0;
+    color: #aaa;
+}
+
+.match-info span {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+/* Live matches table for observers */
+.matches-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8em;
+    margin-top: 5px;
+}
+
+.matches-table th {
+    background: #1a1a2e;
+    padding: 5px;
+    font-size: 0.85em;
+    color: #aaa;
+}
+
+.matches-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #333;
+}
+
+.matches-table tr.current-match {
+    background: #0f3460;
+}
+
+.matches-table .score {
+    text-align: center;
+    font-weight: bold;
+    color: #f39c12;
 }
