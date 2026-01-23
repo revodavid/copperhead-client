@@ -974,8 +974,19 @@ function handleKeydown(event) {
 
     if (direction) {
         event.preventDefault();
-        sfx.move();
-        ws.send(JSON.stringify({ action: "move", direction }));
+        
+        // Check if the player is trying to reverse direction
+        const opposites = { up: "down", down: "up", left: "right", right: "left" };
+        const mySnake = gameState.snakes[playerId] || gameState.snakes[String(playerId)];
+        const currentDir = mySnake ? mySnake.direction : null;
+        
+        // If trying to move in opposite direction, play invalid sound and don't send move
+        if (currentDir && opposites[direction] === currentDir) {
+            sfx.invalidMove();
+        } else {
+            sfx.move();
+            ws.send(JSON.stringify({ action: "move", direction }));
+        }
     }
 }
 
