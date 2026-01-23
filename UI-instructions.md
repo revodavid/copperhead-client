@@ -20,7 +20,7 @@ Looking for a server? Launch one in GitHub CodeSpaces: [link to copperhead-serve
   - CodeSpaces: [user may enter name of their CodeSpace, e.g., bookish-fortnight-1234]
   - Custom: [Free text, user will provide full WebSocket URL]
 
-### Join the Competion (middle, left)
+### Join the Competition (middle, left)
 
 Button "Play" adds the user to Round 1 of the competition. This adds the user as a player in the first open match on the server if Round 1 is active and waiting for players.
 
@@ -28,12 +28,25 @@ Once all Competition slots are filled, the competition starts and the Play butto
 
 ### Competition Status (middle, center)
 
-Show:
- - Current round number (e.g., Round 2 of 5)
- - Table of matches in current round (one row per match), showing player names and live scores. Where matches are waiting for a player, show "Waiting..." as the missing player name(s).
+Title: 🏆 Competition Status
 
-Include a button at the bottom to add an AI player, which adds a CopperBot of random difficulty (1-10) to the competiton. This button is disabled if a competition is in progress.
+Subtitle is context dependent:
+  - Competition not started: "Waiting for players to join... (X/Y)" with X = current players, Y = total slots
+  - Round underway: "Round X in Progress" with X = current round number
+  - Between rounds: "Round X Complete! Next round starting in Y seconds..." with X = completed round number, Y = countdown to next round
+  - Competition complete: "Winner: <Playername>! New competition starting in Y seconds..." Y = countdown to new competition
 
+Below show a table of matches:
+ - Before competition start: Table of all matches in Round 1 (one row per match), showing player names or "Waiting..." for empty slots.
+ - Current round underway: Table of matches in current round (one row per match), showing player names and live scores.
+   - For completed rounds, show final scores with the winner's score in green
+ - Between rounds: Table of matches in completed round (one row per match), showing final scores with the winner's score in green
+ - Competition complete: Larger final-round scoreboard with winner score highlighted in green.
+
+Below the table:
+ - Include a button at the bottom to add an AI player
+ - Include a dropdown to select difficulty of added AI player (1-10, or "Random"). The default is "Random".
+ 
 #### Observe Matches (middle, right)
 
 Button launches the "Observe Game" screen.

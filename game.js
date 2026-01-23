@@ -56,6 +56,8 @@ const matchInfoDiv = document.getElementById("match-info");
 const roundInfoDiv = document.getElementById("round-info");
 const pointsToWinInfoDiv = document.getElementById("points-to-win-info");
 const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "";
+const serverUrlText = document.getElementById("server-url-text");
+const copyUrlBtn = document.getElementById("copyUrlBtn");
 
 // Event listeners
 playBtn.addEventListener("click", () => connectWithMode("two_player"));
@@ -68,6 +70,7 @@ serverUrlCustom.addEventListener("input", debounce(updateCustomServerUrl, 500));
 serverUrlCustom.addEventListener("change", updateCustomServerUrl);
 codespaceName.addEventListener("input", debounce(updateCustomServerUrl, 500));
 codespaceName.addEventListener("change", updateCustomServerUrl);
+copyUrlBtn.addEventListener("click", copyServerUrl);
 
 // Fetch server settings and status on load
 fetchServerStatus();
@@ -147,6 +150,12 @@ async function fetchServerStatus() {
             const statusData = await statusResponse.json();
             if (statusData.speed) {
                 serverSettings.speed = statusData.speed;
+            }
+            if (statusData.grid_width) {
+                serverSettings.gridWidth = statusData.grid_width;
+            }
+            if (statusData.grid_height) {
+                serverSettings.gridHeight = statusData.grid_height;
             }
             updateEntryScreenStatus(statusData);
         }
@@ -299,17 +308,35 @@ function updateCompetitionDisplay(compData) {
     if (competitionRoundInfo) {
         const round = compData.round || 1;
         const totalRounds = compData.total_rounds || 1;
+        const resetIn = compData.reset_in || 0;
         
         if (compData.state === "waiting_for_players") {
-            competitionRoundInfo.textContent = `Waiting for players (${compData.players}/${compData.required})`;
+            competitionRoundInfo.textContent = `Waiting for players to join... (${compData.players}/${compData.required})`;
         } else if (compData.state === "complete") {
             if (compData.champion) {
-                competitionRoundInfo.textContent = `🏆 Champion: ${compData.champion}`;
+                if (resetIn > 0) {
+                    competitionRoundInfo.textContent = `Winner: ${compData.champion}! New competition starting in ${resetIn} seconds...`;
+                } else {
+                    competitionRoundInfo.textContent = `🏆 Winner: ${compData.champion}!`;
+                }
             } else {
                 competitionRoundInfo.textContent = `Competition Complete`;
             }
         } else {
-            competitionRoundInfo.textContent = `Round ${round} of ${totalRounds}`;
+            competitionRoundInfo.textContent = `Round ${round} in Progress`;
+        }
+    }
+    
+    // Update Play button text based on competition state
+    if (playBtn) {
+        if (compData.state === "in_progress") {
+            playBtn.textContent = "Competition in Progress";
+            playBtn.disabled = true;
+        } else if (compData.state === "complete") {
+            playBtn.textContent = "Competition in Progress";
+            playBtn.disabled = true;
+        } else {
+            playBtn.textContent = "Play";
         }
     }
 }
@@ -320,6 +347,12 @@ function updateServerSettingsDisplay(available = true) {
     const pointsEl = document.getElementById("setting-points");
     const contentEl = document.getElementById("server-settings-content");
     const unavailableEl = document.getElementById("server-unavailable");
+    
+    // Update WebSocket URL display
+    const wsUrl = getServerUrl();
+    if (serverUrlText) {
+        serverUrlText.textContent = wsUrl || "--";
+    }
     
     if (available) {
         if (contentEl) contentEl.classList.remove("hidden");
@@ -333,9 +366,42 @@ function updateServerSettingsDisplay(available = true) {
     }
 }
 
+// Copy server WebSocket URL to clipboard
+function copyServerUrl() {
+    const wsUrl = getServerUrl();
+    if (!wsUrl) return;
+    
+    navigator.clipboard.writeText(wsUrl).then(() => {
+        const originalText = copyUrlBtn.textContent;
+        copyUrlBtn.textContent = "✓";
+        setTimeout(() => {
+            copyUrlBtn.textContent = originalText;
+        }, 1500);
+    }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = wsUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        
+        const originalText = copyUrlBtn.textContent;
+        copyUrlBtn.textContent = "✓";
+        setTimeout(() => {
+            copyUrlBtn.textContent = originalText;
+        }, 1500);
+    });
+}
+
 async function addAiPlayer() {
     const baseUrl = getServerUrl();
     if (!baseUrl) return;
+    
+    // Get selected difficulty
+    const difficultySelect = document.getElementById("aiDifficultySelect");
+    const difficultyValue = difficultySelect ? difficultySelect.value : "random";
+    const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
     
     // Spawn a CopperBot via WebSocket connection
     addAiBtn.disabled = true;
@@ -343,7 +409,7 @@ async function addAiPlayer() {
     
     try {
         const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
-        const response = await fetch(httpUrl + "/add_bot", { method: "POST" });
+        const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
         if (response.ok) {
             addAiBtn.textContent = "AI Added!";
             setTimeout(() => {
@@ -529,6 +595,14 @@ function handleMessage(data) {
             const oldRound = currentRound;
             activeRooms = data.rooms || [];
             
+            // Update round info if provided
+            if (data.round !== undefined) {
+                currentRound = data.round;
+            }
+            if (data.total_rounds !== undefined) {
+                totalRounds = data.total_rounds;
+            }
+            
             // If we were following a winner and this is a new round, find their room
             if (observerFollowingPlayer && observerMatchComplete) {
                 const winnerRoom = activeRooms.find(r => 
@@ -551,6 +625,7 @@ function handleMessage(data) {
                 if (currentRoomIndex < 0) currentRoomIndex = 0;
             }
             updateObserverInfo();
+            updateMatchInfo();
             break;
         case "state":
             // Sound effects only for players, not observers
@@ -704,13 +779,22 @@ function handleMessage(data) {
             const remainingMatches = data.remaining_matches || 0;
             
             if (isObserver) {
-                // Track winner to follow to next round
-                observerFollowingPlayer = matchWinnerName;
-                observerMatchComplete = true;
-                
-                // Show green status for match complete
-                let matchMsg = `Round ${currentRound} Match Complete: ${matchWinnerName} Wins! Waiting for next round to begin...`;
-                setStatus(matchMsg, "match-complete");
+                // Check if this is the final round
+                if (currentRound >= totalRounds) {
+                    // Final round - show result then return to entry screen
+                    setStatus(`🏆 Competition Champion: ${matchWinnerName}!`, "match-complete");
+                    setTimeout(() => {
+                        returnToEntryScreen();
+                    }, 3000);
+                } else {
+                    // Not final round - track winner to follow to next round
+                    observerFollowingPlayer = matchWinnerName;
+                    observerMatchComplete = true;
+                    
+                    // Show green status for match complete
+                    let matchMsg = `Round ${currentRound} Match Complete: ${matchWinnerName} Wins! Waiting for next round to begin...`;
+                    setStatus(matchMsg, "match-complete");
+                }
             } else {
                 // Check if current player won or lost
                 if (matchWinnerId === playerId) {
@@ -735,7 +819,11 @@ function handleMessage(data) {
             const resetIn = data.reset_in || 10;
             
             if (isObserver) {
+                // Observer returns to entry screen after seeing champion
                 setStatus(`🏆 Competition Champion: ${champion}!`, "connected");
+                setTimeout(() => {
+                    returnToEntryScreen();
+                }, 3000);
             } else {
                 setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${resetIn}s...`, "connected");
                 

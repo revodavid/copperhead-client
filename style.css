@@ -153,6 +153,32 @@ h1 {
     background: #7d3c98;
 }
 
+.ai-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.ai-controls button {
+    margin-top: 0;
+}
+
+#aiDifficultySelect {
+    padding: 8px 12px;
+    border-radius: 5px;
+    background: #2a2a4a;
+    color: #eee;
+    border: 1px solid #444;
+    cursor: pointer;
+}
+
+#aiDifficultySelect:focus {
+    outline: none;
+    border-color: #9b59b6;
+}
+
 #observeBtn {
     background: #3498db;
 }
@@ -454,6 +480,37 @@ input[type="range"] {
     color: #e74c3c;
     font-size: 0.9em;
     padding: 10px;
+}
+
+.server-url-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #333;
+}
+
+#server-url-text {
+    font-family: monospace;
+    font-size: 0.85em;
+    color: #888;
+    word-break: break-all;
+}
+
+.copy-btn {
+    background: transparent;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    font-size: 0.75em;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.copy-btn:hover {
+    opacity: 1;
 }
 
 .setting-label {
