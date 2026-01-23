@@ -212,6 +212,28 @@ class SoundFX {
         osc.start(now);
         osc.stop(now + 0.05);
     }
+
+    // Invalid move sound - short buzzer for reverse direction attempts
+    invalidMove() {
+        if (!this.enabled) return;
+        this.init();
+
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        
+        osc.type = 'sawtooth';
+        osc.frequency.value = 120;
+        
+        const now = this.audioCtx.currentTime;
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
 }
 
 const sfx = new SoundFX();
