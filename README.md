@@ -24,7 +24,7 @@ Web-based client for the CopperHead 2-player Snake game.
 
 - **Arrow keys** or **WASD**: Move snake
 - **Space**: Ready up / Restart
-- **ESC**: Return to setup
+- **ESC** or **`** (backtick): Return to setup
 - **1-9, 0**: Set AI difficulty (1-10) during vs AI games
 
 ## License
