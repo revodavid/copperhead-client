@@ -920,8 +920,8 @@ function returnToEntryScreen() {
 }
 
 function handleKeydown(event) {
-    // ESC returns to setup screen
-    if (event.code === "Escape") {
+    // ESC and backtick return to setup screen
+    if (event.code === "Escape" || event.code === "Backquote") {
         returnToEntryScreen();
         return;
     }
@@ -1190,7 +1190,7 @@ function updateObserverInfo() {
             <h4>Controls</h4>
             <div class="key-row"><span class="key">↑</span> Previous match</div>
             <div class="key-row"><span class="key">↓</span> Next match</div>
-            <div class="key-row"><span class="key">Esc</span> Back to menu</div>
+            <div class="key-row"><span class="key">Esc</span> or <span class="key">\`</span> Back to menu</div>
         </div>
         <div class="instruction-section">
             <h4>Current Round Matches</h4>
