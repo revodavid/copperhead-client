@@ -144,6 +144,15 @@ h1 {
     background: #1e8449;
 }
 
+#playBotBtn {
+    background: #3498db;
+    margin-top: 8px;
+}
+
+#playBotBtn:hover:not(:disabled) {
+    background: #2980b9;
+}
+
 #addAiBtn {
     background: #9b59b6;
     margin-top: 10px;

@@ -41,6 +41,7 @@ const serverUrlSelect = document.getElementById("serverUrlSelect");
 const serverUrlCustom = document.getElementById("serverUrlCustom");
 const codespaceName = document.getElementById("codespaceName");
 const playBtn = document.getElementById("playBtn");
+const playBotBtn = document.getElementById("playBotBtn");
 const playStatus = document.getElementById("play-status");
 const addAiBtn = document.getElementById("addAiBtn");
 const observeBtn = document.getElementById("observeBtn");
@@ -62,6 +63,7 @@ const copyUrlBtn = document.getElementById("copyUrlBtn");
 
 // Event listeners
 playBtn.addEventListener("click", () => connectWithMode("two_player"));
+playBotBtn.addEventListener("click", () => connectWithMode("vs_ai"));
 addAiBtn.addEventListener("click", addAiPlayer);
 observeBtn.addEventListener("click", observe);
 readyBtn.addEventListener("click", sendReady);
@@ -192,10 +194,16 @@ function updateEntryScreenStatus(statusData) {
     hasOpenMatches = openSlots > 0;
     const hasAnyMatches = rooms.length > 0;
     
-    // Update Play button - only enabled if there's an open slot
+    // Update Join button - only enabled if there's an open slot
     if (playBtn) {
         playBtn.disabled = !hasOpenMatches;
     }
+    
+    // Update Play Bot button - enabled only for single-arena competition with open slots
+    if (playBotBtn) {
+        playBotBtn.disabled = !(arenas === 1 && openSlots === 2);
+    }
+    
     if (playStatus) {
         if (hasOpenMatches) {
             playStatus.textContent = `${openSlots} slot${openSlots > 1 ? 's' : ''} available`;
@@ -209,7 +217,7 @@ function updateEntryScreenStatus(statusData) {
         }
     }
     
-    // Update Add Bots button - enabled if there are open slots
+    // Update Add Bot button - enabled if there are open slots
     if (addAiBtn) {
         addAiBtn.disabled = !hasOpenMatches;
     }
@@ -328,7 +336,7 @@ function updateCompetitionDisplay(compData) {
         }
     }
     
-    // Update Play button text based on competition state
+    // Update Join button text based on competition state
     if (playBtn) {
         if (compData.state === "complete") {
             playBtn.textContent = "Competition in Progress";
@@ -337,9 +345,17 @@ function updateCompetitionDisplay(compData) {
             playBtn.textContent = "Competition in Progress";
             playBtn.disabled = true;
         } else {
-            playBtn.textContent = "Play";
+            playBtn.textContent = "Join";
             playBtn.disabled = !hasOpenMatches;
         }
+    }
+    
+    // Update Play Bot button based on competition state
+    if (playBotBtn) {
+        if (compData.state === "complete" || compData.state === "in_progress") {
+            playBotBtn.disabled = true;
+        }
+        // Note: enabled state for waiting is handled in updateEntryScreenStatus
     }
 }
 
@@ -422,12 +438,12 @@ async function addAiPlayer() {
             const openSlots = statusData.open_slots || 0;
             
             if (openSlots === 0) {
-                addAiBtn.textContent = "Add Bots";
+                addAiBtn.textContent = "Add Bot";
                 await fetchServerStatus();
                 return;
             }
             
-            // Add bots one at a time with random difficulties
+            // Add Bot one at a time with random difficulties
             // Stop early if a slot gets taken by another player
             let successCount = 0;
             for (let i = 0; i < openSlots; i++) {
@@ -442,19 +458,19 @@ async function addAiPlayer() {
             }
             
             // Wait for status update before changing button
-            addAiBtn.textContent = "Add Bots";
+            addAiBtn.textContent = "Add Bot";
             await fetchServerStatus();
         } else {
             // Add a single bot with specified or random difficulty
             const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
             const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
             if (response.ok) {
-                addAiBtn.textContent = "Add Bots";
+                addAiBtn.textContent = "Add Bot";
                 await fetchServerStatus();
             } else {
                 addAiBtn.textContent = "Failed";
                 setTimeout(() => {
-                    addAiBtn.textContent = "Add Bots";
+                    addAiBtn.textContent = "Add Bot";
                     addAiBtn.disabled = !hasOpenMatches;
                 }, 1500);
             }
@@ -462,7 +478,7 @@ async function addAiPlayer() {
     } catch (e) {
         addAiBtn.textContent = "Error";
         setTimeout(() => {
-            addAiBtn.textContent = "Add Bots";
+            addAiBtn.textContent = "Add Bot";
             addAiBtn.disabled = !hasOpenMatches;
         }, 1500);
     }
@@ -529,7 +545,7 @@ function disableAllButtons() {
 
 function enableAllButtons() {
     if (observeBtn) observeBtn.disabled = false;
-    // Play and Add Bots buttons are controlled by server status
+    // Play and Add Bot buttons are controlled by server status
     fetchServerStatus();
 }
 
@@ -665,18 +681,33 @@ function handleMessage(data) {
             break;
         case "state":
             // Sound effects only for players, not observers
-            if (!isObserver && gameState && gameState.running && data.game.running) {
+            if (!isObserver && data.game.running) {
                 const mySnake = data.game.snakes[playerId];
+                const opponentId = playerId === 1 ? "2" : "1";
+                const opponentSnake = data.game.snakes[opponentId];
+                
+                // Initialize lengths if not set (first state after joining)
+                if (lastSnakeLength === 0 && mySnake) {
+                    lastSnakeLength = mySnake.body.length;
+                }
+                if (lastOpponentLength === 0 && opponentSnake) {
+                    lastOpponentLength = opponentSnake.body.length;
+                }
+                
+                // Check if player ate food (snake grew)
                 if (mySnake && mySnake.body.length > lastSnakeLength) {
                     sfx.eat();
+                }
+                // Always update to current length (handles shrinking from grapes too)
+                if (mySnake) {
                     lastSnakeLength = mySnake.body.length;
                 }
                 
                 // Check if opponent ate food
-                const opponentId = playerId === 1 ? "2" : "1";
-                const opponentSnake = data.game.snakes[opponentId];
                 if (opponentSnake && opponentSnake.body.length > lastOpponentLength) {
                     sfx.opponentEat();
+                }
+                if (opponentSnake) {
                     lastOpponentLength = opponentSnake.body.length;
                 }
             }
@@ -947,6 +978,8 @@ function returnToEntryScreen() {
     competitionState = null;
     currentRound = 0;
     wins = {1: 0, 2: 0};
+    lastSnakeLength = 0;
+    lastOpponentLength = 0;
     gamePanel.classList.add("hidden");
     setupPanel.classList.remove("hidden");
     enableAllButtons();
