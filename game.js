@@ -1116,6 +1116,13 @@ function updateCanvas() {
                 CELL_SIZE - 2,
                 CELL_SIZE - 2
             );
+            // Draw eyes on head
+            if (i === 0) {
+                ctx.font = `${CELL_SIZE - 6}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("👀", segment[0] * CELL_SIZE + CELL_SIZE / 2, segment[1] * CELL_SIZE + CELL_SIZE / 2);
+            }
         });
 
         ctx.globalAlpha = 1;
