@@ -19,6 +19,7 @@ Looking for a server? Launch one in GitHub CodeSpaces: [link to copperhead-serve
   - Local: [Provides ws://localhost:8000/ws]
   - CodeSpaces: [user may enter name of their CodeSpace, e.g., bookish-fortnight-1234]
   - Custom: [Free text, user will provide full WebSocket URL]
+* Server URL free text box: appears to the right of the drop down if "Custom" or "CodeSpaces" is selected
 
 ### Join the Competition (middle, left)
 
@@ -43,10 +44,20 @@ Below show a table of matches:
  - Between rounds: Table of matches in completed round (one row per match), showing final scores with the winner's score in green
  - Competition complete: Larger final-round scoreboard with winner score highlighted in green.
 
-Below the table:
+Below the table: AI button
  - Include a button at the bottom to add an AI player
- - Include a dropdown to select difficulty of added AI player (1-10, or "Random"). The default is "Random".
- 
+ - Include a dropdown to the right of the button to select difficulty of added AI player (1-10, or "Random") or to add random bots until the server is full or ("Fill"). The default is "Random".
+   - 1, 2, ... 10: Adds one Copperbot at selected difficulty level (e.g. Copperbot L5
+   - Random: Adds one Copperbot at a random difficulty level (1-10)
+   - Fill: Adds multiple random copperbots to fill all available slots. The button reads "Add Bots" instead of "Add Bots" when this option is selected.
+ - The button has the following states:
+    - Before competition start: "Add Bot" (active)
+      - After click: "Adding..." (disabled)
+      - After all bots are confirmed added: revert to appropriate "Add Bot" state
+    - Competition underway: "Add Bot" (disabled)
+    - Between rounds: "Add Bot" (disabled)
+    - Competition complete: "Add Bot" (disabled)
+
 #### Observe Matches (middle, right)
 
 Button launches the "Observe Game" screen.

@@ -208,7 +208,7 @@ function updateEntryScreenStatus(statusData) {
         }
     }
     
-    // Update Add AI button - enabled if there are open slots
+    // Update Add Bots button - enabled if there are open slots
     if (addAiBtn) {
         addAiBtn.disabled = !hasOpenMatches;
     }
@@ -329,14 +329,15 @@ function updateCompetitionDisplay(compData) {
     
     // Update Play button text based on competition state
     if (playBtn) {
-        if (compData.state === "in_progress") {
+        if (compData.state === "complete") {
             playBtn.textContent = "Competition in Progress";
             playBtn.disabled = true;
-        } else if (compData.state === "complete") {
+        } else if (compData.state === "in_progress" && !hasOpenMatches) {
             playBtn.textContent = "Competition in Progress";
             playBtn.disabled = true;
         } else {
             playBtn.textContent = "Play";
+            playBtn.disabled = !hasOpenMatches;
         }
     }
 }
@@ -401,32 +402,65 @@ async function addAiPlayer() {
     // Get selected difficulty
     const difficultySelect = document.getElementById("aiDifficultySelect");
     const difficultyValue = difficultySelect ? difficultySelect.value : "random";
-    const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
     
-    // Spawn a CopperBot via WebSocket connection
+    // Show loading state
     addAiBtn.disabled = true;
-    addAiBtn.textContent = "Adding AI...";
+    addAiBtn.textContent = "Adding...";
     
     try {
         const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
-        const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
-        if (response.ok) {
-            addAiBtn.textContent = "AI Added!";
-            setTimeout(() => {
-                addAiBtn.textContent = "Add AI Player";
+        
+        if (difficultyValue === "fill") {
+            // Fill all available slots with random difficulty bots
+            // First get the current status to find open slots
+            const statusResponse = await fetch(httpUrl + "/status");
+            if (!statusResponse.ok) {
+                throw new Error("Failed to get server status");
+            }
+            const statusData = await statusResponse.json();
+            const openSlots = statusData.open_slots || 0;
+            
+            if (openSlots === 0) {
+                addAiBtn.textContent = "Add Bots";
                 fetchServerStatus();
-            }, 1500);
+                return;
+            }
+            
+            // Add bots one at a time with random difficulties
+            // Stop early if a slot gets taken by another player
+            let successCount = 0;
+            for (let i = 0; i < openSlots; i++) {
+                const randomDifficulty = Math.floor(Math.random() * 10) + 1;
+                const response = await fetch(httpUrl + "/add_bot?difficulty=" + randomDifficulty, { method: "POST" });
+                if (response.ok) {
+                    successCount++;
+                } else {
+                    // Slot may have been taken by another player, stop filling
+                    break;
+                }
+            }
+            
+            addAiBtn.textContent = "Add Bots";
+            fetchServerStatus();
         } else {
-            addAiBtn.textContent = "Failed";
-            setTimeout(() => {
-                addAiBtn.textContent = "Add AI Player";
-                addAiBtn.disabled = !hasOpenMatches;
-            }, 1500);
+            // Add a single bot with specified or random difficulty
+            const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
+            const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
+            if (response.ok) {
+                addAiBtn.textContent = "Add Bots";
+                fetchServerStatus();
+            } else {
+                addAiBtn.textContent = "Failed";
+                setTimeout(() => {
+                    addAiBtn.textContent = "Add Bots";
+                    addAiBtn.disabled = !hasOpenMatches;
+                }, 1500);
+            }
         }
     } catch (e) {
         addAiBtn.textContent = "Error";
         setTimeout(() => {
-            addAiBtn.textContent = "Add AI Player";
+            addAiBtn.textContent = "Add Bots";
             addAiBtn.disabled = !hasOpenMatches;
         }, 1500);
     }
@@ -493,7 +527,7 @@ function disableAllButtons() {
 
 function enableAllButtons() {
     if (observeBtn) observeBtn.disabled = false;
-    // Play and Add AI buttons are controlled by server status
+    // Play and Add Bots buttons are controlled by server status
     fetchServerStatus();
 }
 
@@ -920,7 +954,7 @@ function returnToEntryScreen() {
 }
 
 function handleKeydown(event) {
-    // ESC and backtick return to setup screen
+    // ESC or backtick returns to setup screen
     if (event.code === "Escape" || event.code === "Backquote") {
         returnToEntryScreen();
         return;
