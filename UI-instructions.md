@@ -23,7 +23,9 @@ Looking for a server? Launch one in GitHub CodeSpaces: [link to copperhead-serve
 
 ### Join the Competition (middle, left)
 
-Button "Play" adds the user to Round 1 of the competition. This adds the user as a player in the first open match on the server if Round 1 is active and waiting for players.
+Button "Join" adds the user to Round 1 of the competition. This adds the user as a player in the first open match on the server if Round 1 is active and waiting for players.
+
+There is a button below "Join" labeled "Play Bot". In the special case of a competion with just one arena, this button is enabled and adds the user and a random CopperBot opponent to the single match in Round 1 for immediate play.
 
 Once all Competition slots are filled, the competition starts and the Play button is disabled and changes to "Competition in Progress" until the next competition begins.
 
@@ -51,13 +53,12 @@ Below the table: AI button
    - Random: Adds one Copperbot at a random difficulty level (1-10)
    - Fill: Adds multiple random copperbots to fill all available slots. The button reads "Add Bots" instead of "Add Bots" when this option is selected.
  - The button has the following states:
-    - Before competition start: "Add Bot" (active)
-      - After click: "Adding..." (disabled)
+    - Before competition start: "Add Bot" (active appearance)
+      - After click: "Adding..." (disabled appearance)
       - After all bots are confirmed added: revert to appropriate "Add Bot" state
-    - Competition underway: "Add Bot" (disabled)
-    - Between rounds: "Add Bot" (disabled)
-    - Competition complete: "Add Bot" (disabled)
-
+    - Competition underway: "Add Bot" (disabled appearance)
+    - Between rounds: "Add Bot" (disabled appearance)
+    - Competition complete: "Add Bot" (disabled appearance)
 #### Observe Matches (middle, right)
 
 Button launches the "Observe Game" screen.

@@ -423,7 +423,7 @@ async function addAiPlayer() {
             
             if (openSlots === 0) {
                 addAiBtn.textContent = "Add Bots";
-                fetchServerStatus();
+                await fetchServerStatus();
                 return;
             }
             
@@ -441,15 +441,16 @@ async function addAiPlayer() {
                 }
             }
             
+            // Wait for status update before changing button
             addAiBtn.textContent = "Add Bots";
-            fetchServerStatus();
+            await fetchServerStatus();
         } else {
             // Add a single bot with specified or random difficulty
             const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
             const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
             if (response.ok) {
                 addAiBtn.textContent = "Add Bots";
-                fetchServerStatus();
+                await fetchServerStatus();
             } else {
                 addAiBtn.textContent = "Failed";
                 setTimeout(() => {
@@ -1116,12 +1117,28 @@ function updateCanvas() {
                 CELL_SIZE - 2,
                 CELL_SIZE - 2
             );
-            // Draw eyes on head
+            // Draw eyes on head, rotated to show direction
             if (i === 0) {
+                const centerX = segment[0] * CELL_SIZE + CELL_SIZE / 2;
+                const centerY = segment[1] * CELL_SIZE + CELL_SIZE / 2;
+                
+                // Rotation based on direction (👀 default faces left)
+                let rotation = 0;
+                switch (snake.direction) {
+                    case "left": rotation = 0; break;
+                    case "right": rotation = Math.PI; break;
+                    case "up": rotation = Math.PI / 2; break;
+                    case "down": rotation = -Math.PI / 2; break;
+                }
+                
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(rotation);
                 ctx.font = `${CELL_SIZE - 6}px Arial`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText("👀", segment[0] * CELL_SIZE + CELL_SIZE / 2, segment[1] * CELL_SIZE + CELL_SIZE / 2);
+                ctx.fillText("👀", 0, 0);
+                ctx.restore();
             }
         });
 
