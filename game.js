@@ -17,6 +17,7 @@ let activeRooms = [];
 let currentRoomIndex = 0;
 let statusPollInterval = null;
 let hasOpenMatches = false;
+let renderLoopActive = false;
 
 // Competition mode state
 let competitionState = null;
@@ -1056,18 +1057,37 @@ function updateCanvas() {
         ctx.stroke();
     }
 
-    // Draw food
-    if (gameState.food) {
-        ctx.fillStyle = "#f39c12";
-        ctx.beginPath();
-        ctx.arc(
-            gameState.food[0] * CELL_SIZE + CELL_SIZE / 2,
-            gameState.food[1] * CELL_SIZE + CELL_SIZE / 2,
-            CELL_SIZE / 2 - 2,
-            0,
-            Math.PI * 2
-        );
-        ctx.fill();
+    // Draw food items
+    const foods = gameState.foods || (gameState.food ? [{x: gameState.food[0], y: gameState.food[1], type: "apple"}] : []);
+    const fruitEmojis = {
+        apple: "🍎", orange: "🍊", lemon: "🍋", grapes: "🍇", strawberry: "🍓",
+        banana: "🍌", peach: "🍑", cherry: "🍒", watermelon: "🍉", kiwi: "🥝"
+    };
+    for (const food of foods) {
+        const emoji = fruitEmojis[food.type] || "🍎";
+        ctx.font = `${CELL_SIZE - 4}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // Flash effect when fruit is about to expire (lifetime is reported)
+        // Alternate visibility based on remaining lifetime (odd/even ticks)
+        let alpha = 1.0;
+        if (food.lifetime !== null && food.lifetime !== undefined) {
+            // Flash by toggling alpha on alternate ticks, faster as lifetime decreases
+            if (food.lifetime <= 5) {
+                // Fast flash: every tick
+                alpha = (food.lifetime % 2 === 0) ? 1.0 : 0.3;
+            } else if (food.lifetime <= 10) {
+                // Medium flash: every 2 ticks
+                alpha = (Math.floor(food.lifetime / 2) % 2 === 0) ? 1.0 : 0.4;
+            } else {
+                // Slow flash: every 3 ticks
+                alpha = (Math.floor(food.lifetime / 3) % 2 === 0) ? 1.0 : 0.5;
+            }
+        }
+        ctx.globalAlpha = alpha;
+        ctx.fillText(emoji, food.x * CELL_SIZE + CELL_SIZE / 2, food.y * CELL_SIZE + CELL_SIZE / 2);
+        ctx.globalAlpha = 1.0;
     }
 
     // Draw snakes
