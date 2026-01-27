@@ -8,7 +8,6 @@ let wins = {1: 0, 2: 0};
 let names = {1: "Player 1", 2: "Player 2"};
 let playerId = 1;
 let playerName = "";
-let gameMode = "two_player";
 let lastSnakeLength = 0;
 let lastOpponentLength = 0;
 let isObserver = false;
@@ -62,8 +61,8 @@ const serverUrlText = document.getElementById("server-url-text");
 const copyUrlBtn = document.getElementById("copyUrlBtn");
 
 // Event listeners
-playBtn.addEventListener("click", () => connectWithMode("two_player"));
-playBotBtn.addEventListener("click", () => connectWithMode("vs_ai"));
+playBtn.addEventListener("click", connectWithMode);
+playBotBtn.addEventListener("click", playAgainstBot);
 addAiBtn.addEventListener("click", addAiPlayer);
 observeBtn.addEventListener("click", observe);
 readyBtn.addEventListener("click", sendReady);
@@ -484,6 +483,46 @@ async function addAiPlayer() {
     }
 }
 
+// Play against a bot - first spawn a bot, then join as a player
+async function playAgainstBot() {
+    const baseUrl = getServerUrl();
+    if (!baseUrl) {
+        alert("Please enter a server URL");
+        return;
+    }
+    
+    // Show loading state on button
+    playBotBtn.disabled = true;
+    playBotBtn.textContent = "Starting...";
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        
+        // Spawn a bot with random difficulty
+        const difficulty = Math.floor(Math.random() * 10) + 1;
+        const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
+        
+        if (!response.ok) {
+            playBotBtn.textContent = "Failed";
+            setTimeout(() => {
+                playBotBtn.textContent = "Play Bot";
+                fetchServerStatus();
+            }, 1500);
+            return;
+        }
+        
+        // Bot spawned, now join as a player
+        playBotBtn.textContent = "Play Bot";
+        connectWithMode();
+    } catch (e) {
+        playBotBtn.textContent = "Error";
+        setTimeout(() => {
+            playBotBtn.textContent = "Play Bot";
+            fetchServerStatus();
+        }, 1500);
+    }
+}
+
 function getServerUrl() {
     const selection = serverUrlSelect.value;
     
@@ -499,9 +538,8 @@ function getServerUrl() {
     return "";
 }
 
-function connectWithMode(mode) {
+function connectWithMode() {
     const baseUrl = getServerUrl();
-    gameMode = mode;
     playerName = playerNameInput.value.trim() || "Human";
     isObserver = false;
 
@@ -944,21 +982,14 @@ function handleMessage(data) {
 
 function sendReady() {
     if (ws && ws.readyState === WebSocket.OPEN) {
-        const msg = { action: "ready", mode: gameMode, name: playerName };
-        if (gameMode === "vs_ai") {
-            msg.ai_difficulty = aiDifficulty;
-        }
+        const msg = { action: "ready", name: playerName };
         ws.send(JSON.stringify(msg));
         setStatus("Waiting for game to start...", "connected");
         readyBtn.classList.add("hidden");
         
-        // Update goal text based on mode
+        // Update goal text
         if (goalText) {
-            if (gameMode === "vs_ai") {
-                goalText.textContent = "Outlast the AI opponent! Avoid walls, yourself, and the enemy snake.";
-            } else {
-                goalText.textContent = "Outlast your opponent! Avoid walls, yourself, and the enemy snake.";
-            }
+            goalText.textContent = "Outlast your opponent! Avoid walls, yourself, and the enemy snake.";
         }
         
         // Show match info
