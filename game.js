@@ -164,6 +164,7 @@ async function fetchServerStatus() {
             }
             if (statusData.fruits) {
                 serverSettings.fruits = statusData.fruits;
+                updateFoodItemsDisplay();
             }
             updateEntryScreenStatus(statusData);
         }
@@ -401,7 +402,7 @@ function updateFoodItemsDisplay() {
     
     const fruits = serverSettings.fruits || ["apple"];
     const emojis = fruits.map(f => fruitEmojis[f] || "🍎").join(" ");
-    foodItemsEl.textContent = `Food: ${emojis}`;
+    foodItemsEl.textContent = emojis;
 }
 
 async function addAiPlayer() {
@@ -581,7 +582,6 @@ function connectWebSocket(wsUrl) {
     ws.onopen = () => {
         setupPanel.classList.add("hidden");
         gamePanel.classList.remove("hidden");
-        updateFoodItemsDisplay();
         
         if (isObserver) {
             readyBtn.classList.add("hidden");
@@ -591,6 +591,7 @@ function connectWebSocket(wsUrl) {
             restorePlayerInstructions();
             setStatus("Connected! Click Ready to start.", "connected");
         }
+        updateFoodItemsDisplay();
     };
 
     ws.onmessage = (event) => {
