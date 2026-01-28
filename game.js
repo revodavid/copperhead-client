@@ -36,9 +36,7 @@ let serverSettings = {
 const setupPanel = document.getElementById("setup");
 const gamePanel = document.getElementById("game");
 const playerNameInput = document.getElementById("playerName");
-const serverUrlSelect = document.getElementById("serverUrlSelect");
-const serverUrlCustom = document.getElementById("serverUrlCustom");
-const codespaceName = document.getElementById("codespaceName");
+const serverUrlInput = document.getElementById("serverUrl");
 const playBtn = document.getElementById("playBtn");
 const playBotBtn = document.getElementById("playBotBtn");
 const playStatus = document.getElementById("play-status");
@@ -67,12 +65,12 @@ addAiBtn.addEventListener("click", addAiPlayer);
 observeBtn.addEventListener("click", observe);
 readyBtn.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
-serverUrlSelect.addEventListener("change", updateServerUrlUI);
-serverUrlCustom.addEventListener("input", debounce(updateCustomServerUrl, 500));
-serverUrlCustom.addEventListener("change", updateCustomServerUrl);
-codespaceName.addEventListener("input", debounce(updateCustomServerUrl, 500));
-codespaceName.addEventListener("change", updateCustomServerUrl);
+serverUrlInput.addEventListener("input", debounce(onServerUrlChange, 500));
+serverUrlInput.addEventListener("change", onServerUrlChange);
 copyUrlBtn.addEventListener("click", copyServerUrl);
+
+// Initialize server URL from URL parameter or default to localhost
+initializeServerUrl();
 
 // Fetch server settings and status on load
 fetchServerStatus();
@@ -87,27 +85,20 @@ function debounce(func, wait) {
     };
 }
 
-function updateCustomServerUrl() {
-    showLoadingState();
-    fetchServerStatus();
+function initializeServerUrl() {
+    // Check for 'server' URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const serverParam = urlParams.get('server');
+    
+    if (serverParam) {
+        serverUrlInput.value = serverParam;
+    } else {
+        // Default to localhost for local development
+        serverUrlInput.value = "ws://localhost:8000/ws/";
+    }
 }
 
-function updateServerUrlUI() {
-    const selection = serverUrlSelect.value;
-    
-    // Hide both inputs first
-    serverUrlCustom.classList.add("hidden");
-    codespaceName.classList.add("hidden");
-    
-    if (selection === "custom") {
-        serverUrlCustom.classList.remove("hidden");
-        serverUrlCustom.focus();
-    } else if (selection === "codespaces") {
-        codespaceName.classList.remove("hidden");
-        codespaceName.focus();
-    }
-    
-    // Show loading state and refetch status when server changes
+function onServerUrlChange() {
     showLoadingState();
     fetchServerStatus();
 }
@@ -524,18 +515,7 @@ async function playAgainstBot() {
 }
 
 function getServerUrl() {
-    const selection = serverUrlSelect.value;
-    
-    if (selection === "local") {
-        return "ws://localhost:8000/ws/";
-    } else if (selection === "codespaces") {
-        const name = codespaceName.value.trim();
-        if (!name) return "";
-        return `wss://${name}-8000.app.github.dev/ws`;
-    } else if (selection === "custom") {
-        return serverUrlCustom.value.trim();
-    }
-    return "";
+    return serverUrlInput.value.trim();
 }
 
 function connectWithMode() {
