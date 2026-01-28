@@ -69,7 +69,7 @@ This button is disabled if no games are in progress.
 
 ### Server settings (bottom, centered)
 
-Heading: ⚙️ Server: <websocket server URL> version <server version>
+Heading: ⚙️ Server (v <server version>): <websocket server URL> 
 
 Below, list the settings defined in the server that control the game and competition. Exclude "Arenas".
 

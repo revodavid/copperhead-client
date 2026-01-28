@@ -369,7 +369,7 @@ function updateServerSettingsDisplay(available = true) {
         serverUrlDisplay.textContent = wsUrl || "--";
     }
     if (serverVersion && serverSettings.version) {
-        serverVersion.textContent = `v${serverSettings.version}`;
+        serverVersion.textContent = `(v${serverSettings.version})`;
     }
     
     if (available) {
