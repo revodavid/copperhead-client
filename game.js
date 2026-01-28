@@ -29,7 +29,14 @@ let serverSettings = {
     gridWidth: 30,
     gridHeight: 20,
     speed: 0.15,
-    pointsToWin: 5
+    pointsToWin: 5,
+    fruits: ["apple"]
+};
+
+// Fruit type to emoji mapping
+const fruitEmojis = {
+    apple: "🍎", orange: "🍊", lemon: "🍋", grapes: "🍇", strawberry: "🍓",
+    banana: "🍌", peach: "🍑", cherry: "🍒", watermelon: "🍉", kiwi: "🥝"
 };
 
 // DOM elements
@@ -154,6 +161,9 @@ async function fetchServerStatus() {
             }
             if (statusData.points_to_win) {
                 serverSettings.pointsToWin = statusData.points_to_win;
+            }
+            if (statusData.fruits) {
+                serverSettings.fruits = statusData.fruits;
             }
             updateEntryScreenStatus(statusData);
         }
@@ -385,6 +395,15 @@ function updateServerSettingsDisplay(available = true) {
     }
 }
 
+function updateFoodItemsDisplay() {
+    const foodItemsEl = document.getElementById("food-items");
+    if (!foodItemsEl) return;
+    
+    const fruits = serverSettings.fruits || ["apple"];
+    const emojis = fruits.map(f => fruitEmojis[f] || "🍎").join(" ");
+    foodItemsEl.textContent = `Food: ${emojis}`;
+}
+
 async function addAiPlayer() {
     const baseUrl = getServerUrl();
     if (!baseUrl) return;
@@ -562,6 +581,7 @@ function connectWebSocket(wsUrl) {
     ws.onopen = () => {
         setupPanel.classList.add("hidden");
         gamePanel.classList.remove("hidden");
+        updateFoodItemsDisplay();
         
         if (isObserver) {
             readyBtn.classList.add("hidden");

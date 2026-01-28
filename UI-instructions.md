@@ -94,9 +94,10 @@ Show the gamefield here.
 ### Instructions panel (right, narrow)
 
 Provide:
- - Game goal
+ - Goal 
+   - Outlast your opponent by avoiding walls, yourself, and your opponent. Turn left and right to navigate. Collect food to grow your snake and other bonuses. 
+   - List all food emojis with propensity greater than zero on a single line
  - Keybindings
- - Legend for gamefield symbols (exclude player colors)
 
 ## Play Game Screen -- transitions
 
