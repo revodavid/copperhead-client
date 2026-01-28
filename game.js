@@ -55,8 +55,8 @@ const matchInfoDiv = document.getElementById("match-info");
 const roundInfoDiv = document.getElementById("round-info");
 const pointsToWinInfoDiv = document.getElementById("points-to-win-info");
 const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "";
-const serverUrlText = document.getElementById("server-url-text");
-const copyUrlBtn = document.getElementById("copyUrlBtn");
+const serverUrlDisplay = document.getElementById("server-url-display");
+const serverVersion = document.getElementById("server-version");
 
 // Event listeners
 playBtn.addEventListener("click", connectWithMode);
@@ -67,7 +67,6 @@ readyBtn.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
 serverUrlInput.addEventListener("input", debounce(onServerUrlChange, 500));
 serverUrlInput.addEventListener("change", onServerUrlChange);
-copyUrlBtn.addEventListener("click", copyServerUrl);
 
 // Initialize server URL from URL parameter or default to localhost
 initializeServerUrl();
@@ -150,6 +149,12 @@ async function fetchServerStatus() {
             if (statusData.grid_height) {
                 serverSettings.gridHeight = statusData.grid_height;
             }
+            if (statusData.version) {
+                serverSettings.version = statusData.version;
+            }
+            if (statusData.points_to_win) {
+                serverSettings.pointsToWin = statusData.points_to_win;
+            }
             updateEntryScreenStatus(statusData);
         }
         
@@ -157,7 +162,9 @@ async function fetchServerStatus() {
         const compResponse = await fetch(httpUrl + "/competition");
         if (compResponse.ok) {
             const compData = await compResponse.json();
-            serverSettings.pointsToWin = compData.points_to_win || 5;
+            if (compData.points_to_win) {
+                serverSettings.pointsToWin = compData.points_to_win;
+            }
             currentRound = compData.round || 0;
             totalRounds = compData.total_rounds || 1;
             window.lastCompetitionData = compData;  // Store for match table display
@@ -356,10 +363,13 @@ function updateServerSettingsDisplay(available = true) {
     const contentEl = document.getElementById("server-settings-content");
     const unavailableEl = document.getElementById("server-unavailable");
     
-    // Update WebSocket URL display
+    // Update server URL and version in header
     const wsUrl = getServerUrl();
-    if (serverUrlText) {
-        serverUrlText.textContent = wsUrl || "--";
+    if (serverUrlDisplay) {
+        serverUrlDisplay.textContent = wsUrl || "--";
+    }
+    if (serverVersion && serverSettings.version) {
+        serverVersion.textContent = `v${serverSettings.version}`;
     }
     
     if (available) {
@@ -371,35 +381,8 @@ function updateServerSettingsDisplay(available = true) {
     } else {
         if (contentEl) contentEl.classList.add("hidden");
         if (unavailableEl) unavailableEl.classList.remove("hidden");
+        if (serverVersion) serverVersion.textContent = "";
     }
-}
-
-// Copy server WebSocket URL to clipboard
-function copyServerUrl() {
-    const wsUrl = getServerUrl();
-    if (!wsUrl) return;
-    
-    navigator.clipboard.writeText(wsUrl).then(() => {
-        const originalText = copyUrlBtn.textContent;
-        copyUrlBtn.textContent = "✓";
-        setTimeout(() => {
-            copyUrlBtn.textContent = originalText;
-        }, 1500);
-    }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement("textarea");
-        textArea.value = wsUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-        
-        const originalText = copyUrlBtn.textContent;
-        copyUrlBtn.textContent = "✓";
-        setTimeout(() => {
-            copyUrlBtn.textContent = originalText;
-        }, 1500);
-    });
 }
 
 async function addAiPlayer() {

@@ -69,7 +69,9 @@ This button is disabled if no games are in progress.
 
 ### Server settings (bottom, centered)
 
-List the settings defined in the server that control the game and competition. Exclude "Arenas".
+Heading: ⚙️ Server: <websocket server URL> version <server version>
+
+Below, list the settings defined in the server that control the game and competition. Exclude "Arenas".
 
 If the server is not reachable, indicate this instead of displaying the settings.
 
