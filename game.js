@@ -59,6 +59,7 @@ const ctx = canvas.getContext("2d");
 const goalText = document.getElementById("goal-text");
 const instructionsDiv = document.getElementById("instructions");
 const matchInfoDiv = document.getElementById("match-info");
+const gameStatusDiv = document.getElementById("game-status");
 const roundInfoDiv = document.getElementById("round-info");
 const pointsToWinInfoDiv = document.getElementById("points-to-win-info");
 const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "";
@@ -533,7 +534,7 @@ function connectWithMode() {
 
     stopStatusPolling();
     disableAllButtons();
-    setStatus("Connecting...", "");
+    setStatus("Connecting...", "waiting");
     
     // Use the new /join endpoint for auto-matchmaking
     const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/join";
@@ -552,7 +553,7 @@ function observe() {
 
     stopStatusPolling();
     disableAllButtons();
-    setStatus("Connecting as observer...", "");
+    setStatus("Connecting as observer...", "waiting");
     
     const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/observe";
     connectWebSocket(wsUrl);
@@ -585,11 +586,11 @@ function connectWebSocket(wsUrl) {
         
         if (isObserver) {
             readyBtn.classList.add("hidden");
-            setStatus("Waiting for match to begin...", "connected");
+            setStatus("Waiting for match to begin...", "waiting");
         } else {
             readyBtn.classList.remove("hidden");
             restorePlayerInstructions();
-            setStatus("Connected! Click Ready to start.", "connected");
+            setStatus("Connected! Click Ready to start.", "waiting");
         }
         updateFoodItemsDisplay();
     };
@@ -632,14 +633,14 @@ function handleMessage(data) {
             // Player joined a room
             playerId = data.player_id;
             roomId = data.room_id;
-            setStatus(`Connected to Room ${roomId}! Click Ready to start.`, "connected");
+            setStatus(`Connected to Room ${roomId}! Click Ready to start.`, "waiting");
             break;
         case "observer_lobby":
             // Observer waiting for games
             roomId = null;
             gameState = null;
             activeRooms = [];
-            setStatus("No active games - waiting...", "connected");
+            setStatus("No active games - waiting...", "waiting");
             updateCanvas();
             updateObserverInfo();
             break;
@@ -654,7 +655,7 @@ function handleMessage(data) {
             if (gameState && gameState.running) {
                 setStatus(`Round ${currentRound || 1} Match in Progress: ${p1Name} vs ${p2Name}`, "playing");
             } else {
-                setStatus(`Waiting for match to begin...`, "connected");
+                setStatus(`Waiting for match to begin...`, "waiting");
             }
             updateCanvas();
             updateScores();
@@ -789,7 +790,7 @@ function handleMessage(data) {
             
             if (isObserver) {
                 const winnerName = data.winner ? (names[data.winner] || "Unknown") : "No one";
-                setStatus(`${winnerName} Wins the Game! Next game starting soon...`, "connected");
+                setStatus(`${winnerName} Wins the Game! Next game starting soon...`, "victory");
                 
                 // Request updated room list periodically
                 const roomUpdateInterval = setInterval(() => {
@@ -810,20 +811,22 @@ function handleMessage(data) {
                 if (data.winner === null) {
                     msg = `Draw! Score: ${myWins}-${oppWins} (first to ${pointsToWin})`;
                     sfx.lose();
+                    setStatus(msg, "waiting");
                 } else if (data.winner === playerId) {
                     msg = `🏆 You Win! Score: ${myWins}-${oppWins}`;
                     sfx.win();
+                    setStatus(msg, "victory");
                 } else {
                     msg = `${opponentName} Wins - Score: ${myWins}-${oppWins}`;
                     sfx.death();
+                    setStatus(msg, "waiting");
                 }
-                setStatus(msg, "connected");
                 readyBtn.classList.remove("hidden");
                 readyBtn.textContent = "Play Again";
             }
             break;
         case "waiting":
-            setStatus(data.message || "Waiting for opponent...", "connected");
+            setStatus(data.message || "Waiting for opponent...", "waiting");
             break;
             
         // Competition mode messages
@@ -840,7 +843,7 @@ function handleMessage(data) {
             }
             updateMatchInfo();
             updateObserverInfo();
-            setStatus(`Competition Round ${currentRound} of ${totalRounds}`, "connected");
+            setStatus(`Competition Round ${currentRound} of ${totalRounds}`, "waiting");
             break;
             
         case "match_assigned":
@@ -848,7 +851,7 @@ function handleMessage(data) {
             playerId = data.player_id;
             pointsToWin = data.points_to_win || 5;
             serverSettings.pointsToWin = pointsToWin;
-            setStatus(`Match starting! vs ${data.opponent}`, "connected");
+            setStatus(`Match starting! vs ${data.opponent}`, "waiting");
             updateMatchInfo();
             break;
             
@@ -871,7 +874,7 @@ function handleMessage(data) {
                 // Check if this is the final round
                 if (currentRound >= totalRounds) {
                     // Final round - show result then return to entry screen
-                    setStatus(`🏆 Competition Champion: ${matchWinnerName}!`, "match-complete");
+                    setStatus(`🏆 Competition Champion: ${matchWinnerName}!`, "victory");
                     setTimeout(() => {
                         returnToEntryScreen();
                     }, 3000);
@@ -880,19 +883,19 @@ function handleMessage(data) {
                     observerFollowingPlayer = matchWinnerName;
                     observerMatchComplete = true;
                     
-                    // Show green status for match complete
+                    // Show victory status for match complete
                     let matchMsg = `Round ${currentRound} Match Complete: ${matchWinnerName} Wins! Waiting for next round to begin...`;
-                    setStatus(matchMsg, "match-complete");
+                    setStatus(matchMsg, "victory");
                 }
             } else {
                 // Check if current player won or lost
                 if (matchWinnerId === playerId) {
                     setStatus(`🏆 Match Victory! You win ${score1}-${score2}! ` + 
                         (remainingMatches > 0 ? `Waiting for ${remainingMatches} match${remainingMatches > 1 ? 'es' : ''}.` : 'Round complete.'), 
-                        "connected");
+                        "victory");
                     sfx.win();
                 } else {
-                    setStatus(`Match Over - ${matchWinnerName} wins ${score1}-${score2}`, "connected");
+                    setStatus(`Match Over - ${matchWinnerName} wins ${score1}-${score2}`, "waiting");
                     sfx.lose();
                 }
                 // Reset for next match
@@ -909,19 +912,19 @@ function handleMessage(data) {
             
             if (isObserver) {
                 // Observer returns to entry screen after seeing champion
-                setStatus(`🏆 Competition Champion: ${champion}!`, "connected");
+                setStatus(`🏆 Competition Champion: ${champion}!`, "victory");
                 setTimeout(() => {
                     returnToEntryScreen();
                 }, 3000);
             } else {
-                setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${resetIn}s...`, "connected");
+                setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${resetIn}s...`, "victory");
                 
                 // Start countdown display for players only
                 let countdown = resetIn;
                 const countdownInterval = setInterval(() => {
                     countdown--;
                     if (countdown > 0) {
-                        setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${countdown}s...`, "connected");
+                        setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${countdown}s...`, "victory");
                     } else {
                         clearInterval(countdownInterval);
                         returnToEntryScreen();
@@ -935,27 +938,27 @@ function handleMessage(data) {
             const roundWinner = data.winner?.name || "Unknown";
             const nextRound = currentRound + 1;
             if (isObserver) {
-                setStatus(`Round ${currentRound} Complete: ${roundWinner} Advances to Round ${nextRound}! Next round starting soon...`, "connected");
+                setStatus(`Round ${currentRound} Complete: ${roundWinner} Advances to Round ${nextRound}! Next round starting soon...`, "victory");
             } else {
                 const nextRoundIn = data.next_round_in || 5;
-                setStatus(`Round ${currentRound} complete! ${roundWinner} advances. Next round in ${nextRoundIn}s...`, "connected");
+                setStatus(`Round ${currentRound} complete! ${roundWinner} advances. Next round in ${nextRoundIn}s...`, "victory");
             }
             break;
             
         case "eliminated":
             // Player was eliminated from competition
-            setStatus(`Eliminated from competition. Returning to menu...`, "connected");
+            setStatus(`Eliminated from competition. Returning to menu...`, "error");
             setTimeout(() => {
                 returnToEntryScreen();
             }, 3000);
             break;
             
         case "lobby_status":
-            setStatus(`Waiting for players: ${data.current}/${data.required}`, "connected");
+            setStatus(`Waiting for players: ${data.current}/${data.required}`, "waiting");
             break;
             
         case "registered":
-            setStatus(`Registered as ${data.name}. Waiting for competition to start...`, "connected");
+            setStatus(`Registered as ${data.name}. Waiting for competition to start...`, "waiting");
             if (data.competition_status) {
                 serverSettings.pointsToWin = data.competition_status.points_to_win || 5;
                 updateServerSettingsDisplay();
@@ -968,7 +971,7 @@ function sendReady() {
     if (ws && ws.readyState === WebSocket.OPEN) {
         const msg = { action: "ready", name: playerName };
         ws.send(JSON.stringify(msg));
-        setStatus("Waiting for game to start...", "connected");
+        setStatus("Waiting for game to start...", "waiting");
         readyBtn.classList.add("hidden");
         
         // Update goal text
@@ -998,7 +1001,7 @@ function returnToEntryScreen() {
     gamePanel.classList.add("hidden");
     setupPanel.classList.remove("hidden");
     enableAllButtons();
-    setStatus("Waiting to connect...", "");
+    setStatus("Waiting to connect...", "waiting");
     restorePlayerInstructions();
     startStatusPolling();
 }
@@ -1014,6 +1017,10 @@ function handleKeydown(event) {
     if (isObserver) {
         if (event.code === "ArrowUp" || event.code === "ArrowDown") {
             if (activeRooms.length > 1) {
+                // Clear auto-follow when user manually switches
+                observerFollowingPlayer = null;
+                observerMatchComplete = false;
+                
                 if (event.code === "ArrowUp") {
                     currentRoomIndex = (currentRoomIndex - 1 + activeRooms.length) % activeRooms.length;
                 } else {
@@ -1239,6 +1246,23 @@ function updateMatchInfo() {
     if (currentRound > 0 || pointsToWin > 0) {
         matchInfoDiv.classList.remove("hidden");
         
+        // Update game status (only show "in progress" or winner, not waiting)
+        if (gameStatusDiv) {
+            const p1Wins = wins[1] || wins["1"] || 0;
+            const p2Wins = wins[2] || wins["2"] || 0;
+            const p1Name = names[1] || names["1"] || "Player 1";
+            const p2Name = names[2] || names["2"] || "Player 2";
+            
+            if (p1Wins >= pointsToWin) {
+                gameStatusDiv.innerHTML = `<span class="winner">${p1Name} wins!</span>`;
+            } else if (p2Wins >= pointsToWin) {
+                gameStatusDiv.innerHTML = `<span class="winner">${p2Name} wins!</span>`;
+            } else if (gameState && gameState.running) {
+                gameStatusDiv.innerHTML = `<span class="in-progress">Match in progress</span>`;
+            }
+            // Don't update if waiting - keep showing previous state (winner or in progress)
+        }
+        
         if (roundInfoDiv) {
             roundInfoDiv.innerHTML = `Round <span>${currentRound}</span> of <span>${totalRounds}</span>`;
         }
@@ -1304,12 +1328,6 @@ function updateObserverInfo() {
         matchesTableHtml = "<div>No active matches</div>";
     }
     
-    // Show round info if in competition
-    let roundHtml = "";
-    if (currentRound > 0) {
-        roundHtml = `<div style="margin-bottom: 10px; color: #f39c12;">Round ${currentRound} of ${totalRounds}</div>`;
-    }
-    
     instructionsDiv.innerHTML = `
         <h3>👁️ Observer Mode</h3>
         <div class="instruction-section">
@@ -1320,7 +1338,6 @@ function updateObserverInfo() {
         </div>
         <div class="instruction-section">
             <h4>Current Round Matches</h4>
-            ${roundHtml}
             ${matchesTableHtml}
         </div>
     `;

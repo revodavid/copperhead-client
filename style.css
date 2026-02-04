@@ -248,21 +248,22 @@ button:disabled {
     background: #0f0f23;
 }
 
-#status.connected {
-    color: #2ecc71;
-}
-
-#status.error {
-    color: #e74c3c;
+/* Status message colors based on game state */
+#status.waiting {
+    color: #3498db;  /* Calm blue - anticipation */
 }
 
 #status.playing {
-    color: #f39c12;
+    color: #f39c12;  /* Orange - action/energy */
 }
 
-#status.match-complete {
-    color: #2ecc71;
+#status.victory {
+    color: #f1c40f;  /* Gold - celebration */
     font-weight: bold;
+}
+
+#status.error {
+    color: #e74c3c;  /* Red - problems */
 }
 
 #gameCanvas {
@@ -552,6 +553,19 @@ input[type="range"] {
 .match-info span {
     color: #f39c12;
     font-weight: bold;
+}
+
+/* Game status indicators */
+#game-status .in-progress {
+    color: #f39c12;  /* Orange - playing */
+}
+
+#game-status .winner {
+    color: #f1c40f;  /* Gold - victory */
+}
+
+#game-status .waiting {
+    color: #3498db;  /* Blue - waiting */
 }
 
 /* Live matches table for observers */

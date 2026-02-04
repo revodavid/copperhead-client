@@ -85,7 +85,7 @@ Below, the game screen is divided into three columns:
 
 Table (heading: Score) listing each player by name and their points in the current match.
 
-Also display the current round number (e.g., Round 2 of 5) and the points required to win the match.
+Also display the game status ("Match in progress" or declaring the winner) current round number (e.g., Round 2 of 5) and the points required to win the match.
 
 ### Gamefield grid (center, wide)
 
@@ -136,7 +136,7 @@ Controls: Same styling as Play Game screen, but with keybindings for observer mo
  - Down: Next match
  - ESC: Return to Lobby 
 
-Current round matches: Include the same table from the Entry Screen in the current round of the competition, with player names and current scores.
+Current round matches: Include the same table from the Entry Screen in the current round of the competition, with player names and current scores. (Do not include the round number, which is already shown in the left pane.)
 
 Make this column wide enough to show the full match table without horizontal scrolling or wrapping.
 
