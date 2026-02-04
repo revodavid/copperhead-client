@@ -1,6 +1,6 @@
 # CopperHead Client
 
-Version: 3.4.0
+Version: 3.4.1
 
 Web-based client for the CopperHead 2-player Snake game.
 
@@ -13,6 +13,8 @@ You can play CopperHead versus friends or a bot by visiting this client hosted o
 **Play Online:** [CopperHead Client](https://revodavid.github.io/copperhead-client/)
 
 To play a game, you will need to connect to a running CopperHead server from the client. For instructions on starting a server, visit the [CopperHead Server](../copperhead-server/) repository.
+
+> ⚠️ **VPN Warning:** If you are connected via a VPN, you may experience latency/lag that affects gameplay. For the best experience, disconnect from your VPN before playing.
 
 ## Client Features
 
