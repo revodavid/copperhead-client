@@ -589,6 +589,7 @@ function connectWebSocket(wsUrl) {
             setStatus("Waiting for match to begin...", "waiting");
         } else {
             readyBtn.classList.remove("hidden");
+            readyBtn.textContent = "Start Match";
             restorePlayerInstructions();
             setStatus("Connected! Click Ready to start.", "waiting");
         }
@@ -822,7 +823,7 @@ function handleMessage(data) {
                     setStatus(msg, "waiting");
                 }
                 readyBtn.classList.remove("hidden");
-                readyBtn.textContent = "Play Again";
+                readyBtn.textContent = "Next Game";
             }
             break;
         case "waiting":
@@ -901,7 +902,7 @@ function handleMessage(data) {
                 // Reset for next match
                 wins = {1: 0, 2: 0};
                 readyBtn.classList.remove("hidden");
-                readyBtn.textContent = "Play Again";
+                readyBtn.textContent = "Return to Lobby";
             }
             updateMatchInfo();
             break;
@@ -968,6 +969,12 @@ function handleMessage(data) {
 }
 
 function sendReady() {
+    // If button says "Return to Lobby", go back to entry screen
+    if (readyBtn.textContent === "Return to Lobby") {
+        returnToEntryScreen();
+        return;
+    }
+    
     if (ws && ws.readyState === WebSocket.OPEN) {
         const msg = { action: "ready", name: playerName };
         ws.send(JSON.stringify(msg));
