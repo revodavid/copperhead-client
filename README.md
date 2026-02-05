@@ -1,6 +1,6 @@
 # CopperHead Client
 
-Version: 3.4.1
+Version: 3.5.0
 
 Web-based client for the CopperHead 2-player Snake game.
 
@@ -39,11 +39,11 @@ The client supports the following URL parameter:
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `server` | Pre-fills the Server URL field | `?server=wss://my-codespace-8000.app.github.dev/ws/` |
+| `server` | Pre-fills the Server URL field | `?server=wss://my-codespace-8765.app.github.dev/ws/` |
 
 **Example:** To link directly to a Codespaces server:
 ```
-https://revodavid.github.io/copperhead-client/?server=wss://my-codespace-8000.app.github.dev/ws/
+https://revodavid.github.io/copperhead-client/?server=wss://my-codespace-8765.app.github.dev/ws/
 ```
 
 When launching a server in Codespaces, the terminal will display a ready-to-use link with this parameter included.

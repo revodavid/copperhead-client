@@ -493,6 +493,48 @@ input[type="range"] {
     padding: 10px;
 }
 
+/* Championship History section */
+.championship-history {
+    margin-top: 20px;
+    padding: 15px;
+    background: #0f0f23;
+    border: 1px solid #333;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.championship-history h4 {
+    margin: 0 0 10px 0;
+    color: #f1c40f;
+    font-size: 0.95em;
+}
+
+#history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.history-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: #1a1a2e;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.history-entry .champion-name {
+    color: #f1c40f;
+    font-weight: bold;
+}
+
+.history-entry .history-details {
+    color: #888;
+}
+
 .server-url-display {
     display: flex;
     align-items: center;

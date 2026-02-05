@@ -16,7 +16,7 @@ Looking for a server? Launch one in GitHub CodeSpaces: [link to copperhead-serve
 
 * Your Name: [Free text. Default: Human]
 * Server URL: [Drop down. Default: Local]
-  - Local: [Provides ws://localhost:8000/ws]
+  - Local: [Provides ws://localhost:8765/ws]
   - CodeSpaces: [user may enter name of their CodeSpace, e.g., bookish-fortnight-1234]
   - Custom: [Free text, user will provide full WebSocket URL]
 * Server URL free text box: appears to the right of the drop down if "Custom" or "CodeSpaces" is selected
@@ -85,7 +85,7 @@ Below, the game screen is divided into three columns:
 
 Table (heading: Score) listing each player by name and their points in the current match.
 
-Also display the game status ("Match in progress" or declaring the winner) current round number (e.g., Round 2 of 5) and the points required to win the match.
+Below, display the game status ("Match in progress" or declaring the winner), and the points required to win the match, and the current round number (e.g., Round 2 of 5).
 
 ### Gamefield grid (center, wide)
 

@@ -17,6 +17,7 @@ let currentRoomIndex = 0;
 let statusPollInterval = null;
 let hasOpenMatches = false;
 let renderLoopActive = false;
+let lastSentDirection = null; // Track last direction sent to server for rapid keypress handling
 
 // Competition mode state
 let competitionState = null;
@@ -101,7 +102,7 @@ function initializeServerUrl() {
         serverUrlInput.value = serverParam;
     } else {
         // Default to localhost for local development
-        serverUrlInput.value = "ws://localhost:8000/ws/";
+        serverUrlInput.value = "ws://localhost:8765/ws/";
     }
 }
 
@@ -181,6 +182,13 @@ async function fetchServerStatus() {
             totalRounds = compData.total_rounds || 1;
             window.lastCompetitionData = compData;  // Store for match table display
             updateCompetitionDisplay(compData);
+        }
+        
+        // Fetch championship history
+        const historyResponse = await fetch(httpUrl + "/history");
+        if (historyResponse.ok) {
+            const historyData = await historyResponse.json();
+            updateChampionshipHistory(historyData.championships || []);
         }
         
         updateServerSettingsDisplay(true);
@@ -395,6 +403,32 @@ function updateServerSettingsDisplay(available = true) {
         if (unavailableEl) unavailableEl.classList.remove("hidden");
         if (serverVersion) serverVersion.textContent = "";
     }
+}
+
+function updateChampionshipHistory(championships) {
+    const historySection = document.getElementById("championship-history");
+    const historyList = document.getElementById("history-list");
+    
+    if (!historySection || !historyList) return;
+    
+    if (championships.length === 0) {
+        historySection.classList.add("hidden");
+        return;
+    }
+    
+    historySection.classList.remove("hidden");
+    
+    // Show most recent first, limit to 10
+    const recent = championships.slice(-10).reverse();
+    
+    historyList.innerHTML = recent.map((entry, index) => {
+        const date = new Date(entry.timestamp);
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `<div class="history-entry">
+            <span class="champion-name">🏆 ${entry.champion}</span>
+            <span class="history-details">${entry.players} players • ${timeStr}</span>
+        </div>`;
+    }).join("");
 }
 
 function updateFoodItemsDisplay() {
@@ -695,6 +729,20 @@ function handleMessage(data) {
                     const p1 = winnerRoom.names?.[1] || "Player 1";
                     const p2 = winnerRoom.names?.[2] || "Player 2";
                     setStatus(`Round ${currentRound} Match in Progress: ${p1} vs ${p2}`, "playing");
+                } else if (!winnerRoom && activeRooms.length > 0) {
+                    // Winner has a bye - switch to first active match
+                    const byePlayerName = observerFollowingPlayer;
+                    const firstRoom = activeRooms[0];
+                    roomId = firstRoom.room_id;
+                    currentRoomIndex = 0;
+                    observerMatchComplete = false;
+                    observerFollowingPlayer = null; // Stop following, they have a bye
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ action: "switch_room", room_id: roomId }));
+                    }
+                    const p1 = firstRoom.names?.[1] || "Player 1";
+                    const p2 = firstRoom.names?.[2] || "Player 2";
+                    setStatus(`${byePlayerName} has a Bye. Watching: ${p1} vs ${p2}`, "playing");
                 }
             } else {
                 currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
@@ -775,6 +823,7 @@ function handleMessage(data) {
             }
             lastSnakeLength = 1;
             lastOpponentLength = 1;
+            lastSentDirection = null; // Reset for new game
             break;
         case "gameover":
             if (data.wins) {
@@ -1074,15 +1123,18 @@ function handleKeydown(event) {
         event.preventDefault();
         
         // Check if the player is trying to reverse direction
+        // Use lastSentDirection if available (for rapid keypresses), otherwise use server state
         const opposites = { up: "down", down: "up", left: "right", right: "left" };
         const mySnake = gameState.snakes[playerId] || gameState.snakes[String(playerId)];
-        const currentDir = mySnake ? mySnake.direction : null;
+        const serverDir = mySnake ? mySnake.direction : null;
+        const currentDir = lastSentDirection || serverDir;
         
         // If trying to move in opposite direction, play invalid sound and don't send move
         if (currentDir && opposites[direction] === currentDir) {
             sfx.invalidMove();
         } else {
             sfx.move();
+            lastSentDirection = direction; // Track what we sent for rapid keypress handling
             ws.send(JSON.stringify({ action: "move", direction }));
         }
     }
@@ -1341,7 +1393,7 @@ function updateObserverInfo() {
             <h4>Controls</h4>
             <div class="key-row"><span class="key">↑</span> Previous match</div>
             <div class="key-row"><span class="key">↓</span> Next match</div>
-            <div class="key-row"><span class="key">Esc</span> or <span class="key">\`</span> Back to menu</div>
+            <div class="key-row"><span class="key">Esc</span> or <span class="key">\`</span> Return to lobby</div>
         </div>
         <div class="instruction-section">
             <h4>Current Round Matches</h4>

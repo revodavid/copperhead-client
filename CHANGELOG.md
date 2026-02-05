@@ -2,6 +2,19 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [3.5.0] - 2026-02-05
+
+### Added
+- Championship history section on entry page showing past winners
+- Observer handles bye scenarios gracefully (switches to another active match)
+
+### Changed
+- Default server port changed from 8000 to 8765
+- Keyboard instruction text: "Back to menu" → "Return to lobby"
+
+### Fixed
+- Rapid keypress handling: tracks last sent direction locally to avoid false reverse-direction errors
+
 ## [3.4.1] - 2026-02-04
 
 ### Added
