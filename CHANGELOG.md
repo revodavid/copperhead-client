@@ -2,6 +2,10 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [3.5.2] - 2026-02-10
+
+_No client changes in this release._
+
 ## [3.5.1] - 2026-02-10
 
 ### Changed
