@@ -238,9 +238,10 @@ function updateEntryScreenStatus(statusData) {
     
     // Update Add Bot button - enabled if there are open slots
     if (addAiBtn) {
-        // Detect auto-spawning bots: server is waiting for players and has bots configured
+        // Detect auto-spawning bots: server is waiting and bots are still connecting
         const serverBots = statusData.bots || 0;
-        if (hasOpenMatches && serverBots > 0 && statusData.competition_state === "waiting_for_players") {
+        const totalPlayers = statusData.total_players || 0;
+        if (serverBots > 0 && totalPlayers < serverBots && statusData.competition_state === "waiting_for_players") {
             botsBeingAdded = true;
         }
         
@@ -248,7 +249,7 @@ function updateEntryScreenStatus(statusData) {
             // Keep showing "Adding..." while bots are connecting
             addAiBtn.disabled = true;
             addAiBtn.textContent = "Adding...";
-            // Clear the flag once slots have filled or bots have connected
+            // Clear the flag once all bots have connected or slots are full
             if (!hasOpenMatches || (lastOpenSlots !== null && openSlots < lastOpenSlots)) {
                 botsBeingAdded = false;
                 addAiBtn.textContent = "Add Bot";
