@@ -26,6 +26,8 @@ let totalRounds = 0;
 let pointsToWin = 5;
 let observerFollowingPlayer = null; // Track winner name to follow between rounds
 let observerMatchComplete = false; // Track if we're waiting for next round
+let botsBeingAdded = false; // Track if bots are in the process of being added
+let lastOpenSlots = null; // Track open slots to detect bot connections
 let serverSettings = {
     gridWidth: 30,
     gridHeight: 20,
@@ -236,7 +238,26 @@ function updateEntryScreenStatus(statusData) {
     
     // Update Add Bot button - enabled if there are open slots
     if (addAiBtn) {
-        addAiBtn.disabled = !hasOpenMatches;
+        // Detect auto-spawning bots: server is waiting for players and has bots configured
+        const serverBots = statusData.bots || 0;
+        if (hasOpenMatches && serverBots > 0 && statusData.competition_state === "waiting_for_players") {
+            botsBeingAdded = true;
+        }
+        
+        if (botsBeingAdded) {
+            // Keep showing "Adding..." while bots are connecting
+            addAiBtn.disabled = true;
+            addAiBtn.textContent = "Adding...";
+            // Clear the flag once slots have filled or bots have connected
+            if (!hasOpenMatches || (lastOpenSlots !== null && openSlots < lastOpenSlots)) {
+                botsBeingAdded = false;
+                addAiBtn.textContent = "Add Bot";
+                addAiBtn.disabled = !hasOpenMatches;
+            }
+        } else {
+            addAiBtn.disabled = !hasOpenMatches;
+        }
+        lastOpenSlots = openSlots;
     }
     
     // Update Observe button - enabled if any matches exist (active or completed)
@@ -451,6 +472,7 @@ async function addAiPlayer() {
     // Show loading state
     addAiBtn.disabled = true;
     addAiBtn.textContent = "Adding...";
+    botsBeingAdded = true;
     
     try {
         const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
@@ -466,6 +488,7 @@ async function addAiPlayer() {
             const openSlots = statusData.open_slots || 0;
             
             if (openSlots === 0) {
+                botsBeingAdded = false;
                 addAiBtn.textContent = "Add Bot";
                 await fetchServerStatus();
                 return;
@@ -485,17 +508,17 @@ async function addAiPlayer() {
                 }
             }
             
-            // Wait for status update before changing button
-            addAiBtn.textContent = "Add Bot";
+            // Let fetchServerStatus handle button state via botsBeingAdded flag
             await fetchServerStatus();
         } else {
             // Add a single bot with specified or random difficulty
             const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
             const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
             if (response.ok) {
-                addAiBtn.textContent = "Add Bot";
+                // Let fetchServerStatus handle button state via botsBeingAdded flag
                 await fetchServerStatus();
             } else {
+                botsBeingAdded = false;
                 addAiBtn.textContent = "Failed";
                 setTimeout(() => {
                     addAiBtn.textContent = "Add Bot";
@@ -504,6 +527,7 @@ async function addAiPlayer() {
             }
         }
     } catch (e) {
+        botsBeingAdded = false;
         addAiBtn.textContent = "Error";
         setTimeout(() => {
             addAiBtn.textContent = "Add Bot";
