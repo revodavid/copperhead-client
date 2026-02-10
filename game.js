@@ -695,7 +695,7 @@ function handleMessage(data) {
             playerId = data.player_id;
             playerIdAssigned = true;
             roomId = data.room_id;
-            setStatus(`Connected to Room ${roomId}! Click Ready to start.`, "waiting");
+            setStatus(`Round begins. Click Start Match to start.`, "waiting");
             break;
         case "observer_lobby":
             // Observer waiting for games
@@ -925,16 +925,24 @@ function handleMessage(data) {
             }
             updateMatchInfo();
             updateObserverInfo();
-            setStatus(`Competition Round ${currentRound} of ${totalRounds}`, "waiting");
+            // Show bye status if this player has a bye
+            if (!isObserver && data.bye_player && data.bye_player === playerName) {
+                setStatus(`You have a bye this round. Waiting for next round to begin.`, "victory");
+            } else {
+                setStatus(`Competition Round ${currentRound} of ${totalRounds}`, "waiting");
+            }
             break;
             
         case "match_assigned":
             roomId = data.room_id;
             playerId = data.player_id;
             playerIdAssigned = true;
+            isObserver = false;
             pointsToWin = data.points_to_win || 5;
             serverSettings.pointsToWin = pointsToWin;
-            setStatus(`Match starting! vs ${data.opponent}`, "waiting");
+            setStatus(`Round begins. Click Start Round to begin.`, "waiting");
+            readyBtn.classList.remove("hidden");
+            readyBtn.textContent = "Start Round";
             updateMatchInfo();
             break;
             
@@ -972,19 +980,25 @@ function handleMessage(data) {
                 }
             } else {
                 // Check if current player won or lost
-                if (matchWinnerId === playerId) {
-                    setStatus(`🏆 Match Victory! You win ${score1}-${score2}! ` + 
-                        (remainingMatches > 0 ? `Waiting for ${remainingMatches} match${remainingMatches > 1 ? 'es' : ''}.` : 'Round complete.'), 
-                        "victory");
-                    sfx.win();
-                } else {
-                    setStatus(`Match Over - ${matchWinnerName} wins ${score1}-${score2}`, "waiting");
-                    sfx.lose();
-                }
-                // Reset for next match
                 wins = {1: 0, 2: 0};
-                readyBtn.classList.remove("hidden");
-                readyBtn.textContent = "Return to Lobby";
+                if (matchWinnerId === playerId) {
+                    const roundNum = data.current_round || currentRound;
+                    setStatus(`🏆 Round ${roundNum} complete: You win!`, "victory");
+                    sfx.win();
+                    // After a delay, update status while waiting for next round
+                    setTimeout(() => {
+                        // Only update if status hasn't been changed by another message
+                        if (!isObserver && matchWinnerId === playerId) {
+                            setStatus("Waiting for next round to begin...", "waiting");
+                        }
+                    }, 3000);
+                    // Winner stays on Play screen; server will send match_assigned for next round
+                } else {
+                    setStatus(`${matchWinnerName} wins the round!`, "waiting");
+                    sfx.lose();
+                    readyBtn.classList.remove("hidden");
+                    readyBtn.textContent = "Return to Lobby";
+                }
             }
             updateMatchInfo();
             break;
@@ -1030,10 +1044,9 @@ function handleMessage(data) {
             
         case "eliminated":
             // Player was eliminated from competition
-            setStatus(`Eliminated from competition. Returning to menu...`, "error");
-            setTimeout(() => {
-                returnToEntryScreen();
-            }, 3000);
+            setStatus(`Eliminated from competition.`, "waiting");
+            readyBtn.classList.remove("hidden");
+            readyBtn.textContent = "Return to Lobby";
             break;
             
         case "lobby_status":

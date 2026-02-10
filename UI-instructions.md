@@ -51,7 +51,7 @@ Below the table: AI button
  - Include a dropdown to the right of the button to select difficulty of added AI player (1-10, or "Random") or to add random bots until the server is full or ("Fill"). The default is "Random".
    - 1, 2, ... 10: Adds one Copperbot at selected difficulty level (e.g. Copperbot L5
    - Random: Adds one Copperbot at a random difficulty level (1-10)
-   - Fill: Adds multiple random copperbots to fill all available slots. The button reads "Add Bots" instead of "Add Bots" when this option is selected.
+   - Fill: Adds multiple random copperbots to fill all available slots. The button reads "Add Bots" instead of "Add Bot" when this option is selected.
  - The button has the following states:
     - Before competition start: "Add Bot" (active appearance)
       - After click: "Adding..." (disabled appearance)

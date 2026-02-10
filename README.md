@@ -1,6 +1,6 @@
 # CopperHead Client
 
-Version: 3.5.0
+Version: 3.5.1
 
 Web-based client for the CopperHead 2-player Snake game.
 

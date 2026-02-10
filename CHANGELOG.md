@@ -2,6 +2,20 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [3.5.1] - 2026-02-10
+
+### Changed
+- Improved round transition messages for human players (issue #12):
+  - Match win: "Round {n} complete: You win!"
+  - Waiting: "Waiting for next round to begin..."
+  - Next round: "Round begins. Click Start Round to begin." with Start Round button
+  - Bye: "You have a bye this round. Waiting for next round to begin."
+  - Match loss: "{opponent} wins the round!" with Return to Lobby button
+
+### Fixed
+- Winner no longer auto-transitions to observer mode or gets kicked to lobby after winning a match
+- Loser no longer auto-redirected to entry screen; sees Return to Lobby button instead
+
 ## [3.5.0] - 2026-02-05
 
 ### Added
