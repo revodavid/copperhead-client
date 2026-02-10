@@ -739,6 +739,11 @@ function handleMessage(data) {
             if (data.total_rounds !== undefined) {
                 totalRounds = data.total_rounds;
             }
+            // Update bye info for observer display
+            if (data.bye_player !== undefined) {
+                if (!window.lastCompetitionData) window.lastCompetitionData = {};
+                window.lastCompetitionData.bye_player = data.bye_player;
+            }
             
             // If we were following a winner and this is a new round, find their room
             if (observerFollowingPlayer && observerMatchComplete) {
