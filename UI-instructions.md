@@ -144,7 +144,7 @@ Make this column wide enough to show the full match table without horizontal scr
 
 When a game is active, the status bar at the top of the screen displays a message like this:
 
-"Round X Match in Progress: PlayerA vs PlayerB"
+"Round X Game in Progress"
 
 ## Game End
 

@@ -688,7 +688,7 @@ function handleMessage(data) {
             const p1Name = names[1] || names["1"] || "Player 1";
             const p2Name = names[2] || names["2"] || "Player 2";
             if (gameState && gameState.running) {
-                setStatus(`Round ${currentRound || 1} Match in Progress: ${p1Name} vs ${p2Name}`, "playing");
+                setStatus(`Round ${currentRound || 1} Game in Progress`, "playing");
             } else {
                 setStatus(`Waiting for match to begin...`, "waiting");
             }
@@ -728,7 +728,7 @@ function handleMessage(data) {
                     }
                     const p1 = winnerRoom.names?.[1] || "Player 1";
                     const p2 = winnerRoom.names?.[2] || "Player 2";
-                    setStatus(`Round ${currentRound} Match in Progress: ${p1} vs ${p2}`, "playing");
+                    setStatus(`Round ${currentRound} Game in Progress`, "playing");
                 } else if (!winnerRoom && activeRooms.length > 0) {
                     // Winner has a bye - switch to first active match
                     const byePlayerName = observerFollowingPlayer;
@@ -808,14 +808,14 @@ function handleMessage(data) {
             if (isObserver && gameState.running) {
                 const obsP1 = names[1] || names["1"] || "Player 1";
                 const obsP2 = names[2] || names["2"] || "Player 2";
-                setStatus(`Round ${currentRound || 1} Match in Progress: ${obsP1} vs ${obsP2}`, "playing");
+                setStatus(`Round ${currentRound || 1} Game in Progress`, "playing");
             }
             break;
         case "start":
             if (isObserver) {
                 const startP1 = names[1] || names["1"] || "Player 1";
                 const startP2 = names[2] || names["2"] || "Player 2";
-                setStatus(`Round ${currentRound} Match in Progress: ${startP1} vs ${startP2}`, "playing");
+                setStatus(`Round ${currentRound} Game in Progress`, "playing");
             } else {
                 setStatus("Game started!", "playing");
                 readyBtn.classList.add("hidden");
