@@ -7,6 +7,7 @@ let gameState = null;
 let wins = {1: 0, 2: 0};
 let names = {1: "Player 1", 2: "Player 2"};
 let playerId = 1;
+let playerIdAssigned = false; // True once server confirms our player_id
 let playerName = "";
 let lastSnakeLength = 0;
 let lastOpponentLength = 0;
@@ -692,6 +693,7 @@ function handleMessage(data) {
         case "joined":
             // Player joined a room
             playerId = data.player_id;
+            playerIdAssigned = true;
             roomId = data.room_id;
             setStatus(`Connected to Room ${roomId}! Click Ready to start.`, "waiting");
             break;
@@ -924,6 +926,7 @@ function handleMessage(data) {
         case "match_assigned":
             roomId = data.room_id;
             playerId = data.player_id;
+            playerIdAssigned = true;
             pointsToWin = data.points_to_win || 5;
             serverSettings.pointsToWin = pointsToWin;
             setStatus(`Match starting! vs ${data.opponent}`, "waiting");
@@ -1073,6 +1076,7 @@ function returnToEntryScreen() {
     }
     gameState = null;
     isObserver = false;
+    playerIdAssigned = false;
     roomId = null;
     competitionState = null;
     currentRound = 0;
@@ -1233,6 +1237,8 @@ function updateCanvas() {
     // Draw snakes
     // For observers: player 1 = green, player 2 = red
     // For players: local player = green, opponent = red
+    // Skip drawing snakes if player_id hasn't been assigned yet (avoids wrong colors)
+    if (!isObserver && !playerIdAssigned) return;
     for (const [pid, snake] of Object.entries(gameState.snakes)) {
         let useGreen;
         if (isObserver) {
