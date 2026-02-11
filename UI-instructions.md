@@ -2,7 +2,7 @@
 
 ## Entry screen
 
-Appears when first launching the client.
+Also referred to as the "Lobby", this screen appears when first launching the client.
 
 ### Header (top, centered)
 
@@ -59,6 +59,7 @@ Below the table: AI button
     - Competition underway: "Add Bot" (disabled appearance)
     - Between rounds: "Add Bot" (disabled appearance)
     - Competition complete: "Add Bot" (disabled appearance)
+
 #### Observe Matches (middle, right)
 
 Button launches the "Observe Game" screen.
@@ -75,9 +76,15 @@ Below, list the settings defined in the server that control the game and competi
 
 If the server is not reachable, indicate this instead of displaying the settings.
 
+Below, include this line in a subtle gray: To launch a new game server, see [CopperHead Server](https://github.com/revodavid/copperhead-server)
+
+### Championship History
+
+Below that, include a "🏆 Championship History" of previous tournament winners on this server.
+
 ## Play Game screen
 
-The header section of the Game Screen includes the game logo and name, and a status bar providing messages to the user.
+The header section of the Game Screen includes the game logo and name, and a status bar providing messages to the player about the current status of the game.
 
 Below, the game screen is divided into three columns:
 
@@ -140,34 +147,4 @@ Current round matches: Include the same table from the Entry Screen in the curre
 
 Make this column wide enough to show the full match table without horizontal scrolling or wrapping.
 
-## Active Gameplay
 
-When a game is active, the status bar at the top of the screen displays a message like this:
-
-"Round X Game in Progress"
-
-## Game End
-
-The game ends when a player crashes. The client waits for the next game to begin. The status banner at the top of the screen displays a message like this:
-
-"PlayerB Wins the Game! Next game starting soon..."
-
-## Match End
-
-The match ends when a player reaches the required points to win. The status banner at the top of the screen displays a message like this:
-
-"Round X Match Complete: PlayerA Wins! Waiting for next round to begin..."
-
-## Round End
-
-When all matches in a round are complete, the status banner for all matches updates to declare the round winners, like this:
-
-"Round X Complete: PlayerA Advances to Round Y! Next round starting soon..."
-
-When the next round begins the view automatically switches to game in the next round that includes the winning player.
-
-## Competition End
-
-When the last match in the final round ends, the status banner updates to declare the overall competition winner. 
-
-The game then returns to the Entry Screen after when the server resets for a new competition. The countdown to reset is displayed in the status bar.

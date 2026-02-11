@@ -2,6 +2,11 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [3.6.0] - 2026-02-11
+
+### Added
+- Link to CopperHead Server repo in the Server Settings section of the Entry Screen
+
 ## [3.5.2] - 2026-02-10
 
 _No client changes in this release._

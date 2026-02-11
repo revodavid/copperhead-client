@@ -493,6 +493,18 @@ input[type="range"] {
     padding: 10px;
 }
 
+.server-launch-link {
+    margin-top: 12px;
+    margin-bottom: 0;
+    font-size: 0.8em;
+    color: #666;
+}
+
+.server-launch-link a {
+    color: #888;
+    text-decoration: underline;
+}
+
 /* Championship History section */
 .championship-history {
     margin-top: 20px;
