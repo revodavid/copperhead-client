@@ -60,7 +60,7 @@ Show round table with all matches in Round 1. All scores are listed as 0-0 in re
 *These buttons are only shown if the user is the server administrator*
 
 * "Add Bot" (blue) - adds a CopperBot opponent to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
-* "Start Competition" (green if slots are open, blue otherwise) - starts the competition immediately, filling any open slots with CopperBots of random difficulty. 
+* "Start Competition" (green if no slots are open, blue otherwise) - starts the competition immediately, filling any open slots from the lobby and then (if necessary) with CopperBots of random difficulty. 
 
 #### During Rounds
 

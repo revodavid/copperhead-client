@@ -2,6 +2,11 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [3.7.0] - 2026-03-05
+
+### Added
+- Lobby mode support (lobby_update, lobby_joined, lobby_left, lobby_kicked messages)
+
 ## [3.6.0] - 2026-02-11
 
 ### Added
