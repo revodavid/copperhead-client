@@ -27,14 +27,29 @@
             </div>
 
             <div class="game-modes">
+                <!-- Left column: Join the Competition -->
                 <div class="mode-card">
                     <h3>🎮 Join the Competition</h3>
-                    <p>Join an open match</p>
+                    
+                    <!-- Original buttons for non-lobby mode -->
                     <button id="playBtn" disabled>Join</button>
                     <button id="playBotBtn" disabled>Play Bot</button>
+                    
+                    <!-- Lobby mode buttons -->
+                    <button id="joinLobbyBtn">Join Lobby</button>
+                    <button id="inviteBtn" class="btn-invite">Invite ⧉</button>
+                    <p class="note">Create your own bot to play against: <a href="https://github.com/revodavid/copperhead-bot" target="_blank" rel="noopener">CopperHead Bot</a></p>
+                    
+                    <!-- Admin-only buttons -->
+                    <div class="admin-only">
+                        <button id="adminPlayBtn">Play</button>
+                        <button id="adminPlayBotBtn">Play Bot</button>
+                    </div>
+                    
                     <p class="mode-status" id="play-status">Checking server...</p>
                 </div>
                 
+                <!-- Center column: Competition Status -->
                 <div class="mode-card competition-status-card">
                     <h3>🏆 Competition Status</h3>
                     <div id="competition-round-info">--</div>
@@ -45,6 +60,8 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Admin controls (keep existing AI controls, add new ones) -->
                     <div class="ai-controls">
                         <button id="addAiBtn" disabled>Add Bot</button>
                         <select id="aiDifficultySelect">
@@ -62,9 +79,26 @@
                             <option value="10">Level 10</option>
                         </select>
                     </div>
+                    
+                    <div class="admin-only competition-controls">
+                        <button id="startCompBtn" class="btn-start-competition">Start Competition</button>
+                        <div class="start-when-full">
+                            <input type="checkbox" id="startWhenFullChk">
+                            <label for="startWhenFullChk">Start when full</label>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="mode-card">
+                <!-- Right column: Lobby -->
+                <div class="mode-card lobby-panel">
+                    <h3>🏆 Lobby</h3>
+                    <div id="lobby-player-list">
+                        <p>Loading lobby...</p>
+                    </div>
+                </div>
+                
+                <!-- Observer section moved to bottom (when not in lobby mode) -->
+                <div class="mode-card observer-card">
                     <h3>👁️ Observe</h3>
                     <p>Watch games in progress</p>
                     <button id="observeBtn">Observe Games</button>
@@ -72,7 +106,7 @@
             </div>
             
             <div id="server-settings" class="server-settings">
-                <h4 id="server-heading">⚙️ Server <span id="server-version"></span>: <span id="server-url-display">--</span></h4>
+                <h4 id="server-heading">⚙️ Server <span id="server-version"></span>: <span id="server-url-display">--</span> <button id="copyServerUrlBtn" class="copy-btn">⧉</button></h4>
                 <div id="server-settings-content" class="settings-grid-compact">
                     <span class="setting-label">Grid Size:</span>
                     <span id="setting-grid">--</span>
@@ -129,6 +163,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Copy to clipboard toast -->
+    <div id="copy-toast" class="copy-toast">URL copied to clipboard!</div>
 
     <script src="sounds.js"></script>
     <script src="game.js"></script>

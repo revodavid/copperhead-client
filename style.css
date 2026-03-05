@@ -70,9 +70,28 @@ h1 {
 }
 
 .game-modes {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr;
     gap: 20px;
     justify-content: center;
+    margin-bottom: 15px;
+}
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 900px) {
+    .game-modes {
+        grid-template-columns: 1fr;
+    }
+    
+    .observer-card {
+        display: block;
+    }
+}
+
+.observer-card {
+    grid-column: 1 / -1; /* Span full width at bottom */
+    margin-top: 15px;
+    display: none; /* Hidden by default, shown by JS when not in lobby mode */
 }
 
 .mode-card {
@@ -80,12 +99,11 @@ h1 {
     border: 2px solid #333;
     border-radius: 10px;
     padding: 20px;
-    width: 200px;
     transition: border-color 0.2s, transform 0.2s;
 }
 
 .mode-card.competition-status-card {
-    width: 320px;
+    /* No specific width override - uses grid sizing */
 }
 
 .mode-card:hover {
@@ -650,4 +668,164 @@ input[type="range"] {
     text-align: center;
     font-weight: bold;
     color: #f39c12;
+}
+
+/* Lobby panel styles */
+.lobby-panel {
+    min-height: 200px;
+}
+
+.lobby-player-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    margin: 4px 0;
+    background: #1a1a2e;
+    border-radius: 4px;
+    gap: 8px;
+}
+
+.lobby-player-assigned {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.lobby-player-waiting {
+    color: #aaa;
+}
+
+.btn-kick {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-kick:hover {
+    background: #c0392b;
+}
+
+.btn-add-to-slot {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-add-to-slot:hover:not(:disabled) {
+    background: #1e8449;
+}
+
+.btn-add-to-slot:disabled {
+    background: #555;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Admin-only elements */
+.admin-only {
+    display: none; /* Initially hidden, shown by JS if admin */
+}
+
+/* Invite button styling */
+.btn-invite {
+    background: #e67e22;
+    color: white;
+    margin-top: 8px;
+}
+
+.btn-invite:hover {
+    background: #d35400;
+}
+
+/* Competition controls */
+.competition-controls {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-start-competition {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-start-competition:hover:not(:disabled) {
+    background: #1e8449;
+}
+
+.btn-start-competition.blue {
+    background: #3498db;
+}
+
+.btn-start-competition.blue:hover:not(:disabled) {
+    background: #2980b9;
+}
+
+.start-when-full {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: #aaa;
+}
+
+.start-when-full input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.start-when-full label {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Copy to clipboard toast */
+.copy-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #27ae60;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.copy-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Note styling for bot link */
+.note {
+    font-size: 0.8em;
+    color: #888;
+    margin: 10px 0;
+    padding: 8px;
+    background: #1a1a2e;
+    border-radius: 4px;
+}
+
+.note a {
+    color: #f39c12;
+    text-decoration: underline;
+}
+
+.note a:hover {
+    color: #e67e22;
 }

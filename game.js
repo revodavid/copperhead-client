@@ -70,18 +70,45 @@ const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "
 const serverUrlDisplay = document.getElementById("server-url-display");
 const serverVersion = document.getElementById("server-version");
 
+// New lobby mode elements
+const joinLobbyBtn = document.getElementById("joinLobbyBtn");
+const inviteBtn = document.getElementById("inviteBtn");
+const adminPlayBtn = document.getElementById("adminPlayBtn");
+const adminPlayBotBtn = document.getElementById("adminPlayBotBtn");
+const startCompBtn = document.getElementById("startCompBtn");
+const startWhenFullChk = document.getElementById("startWhenFullChk");
+const lobbyPlayerList = document.getElementById("lobby-player-list");
+const copyServerUrlBtn = document.getElementById("copyServerUrlBtn");
+const copyToast = document.getElementById("copy-toast");
+
 // Event listeners
-playBtn.addEventListener("click", connectWithMode);
-playBotBtn.addEventListener("click", playAgainstBot);
-addAiBtn.addEventListener("click", addAiPlayer);
-observeBtn.addEventListener("click", observe);
-readyBtn.addEventListener("click", sendReady);
+playBtn?.addEventListener("click", connectWithMode);
+playBotBtn?.addEventListener("click", playAgainstBot);
+addAiBtn?.addEventListener("click", addAiPlayer);
+observeBtn?.addEventListener("click", observe);
+readyBtn?.addEventListener("click", sendReady);
 document.addEventListener("keydown", handleKeydown);
 serverUrlInput.addEventListener("input", debounce(onServerUrlChange, 500));
 serverUrlInput.addEventListener("change", onServerUrlChange);
 
+// New lobby mode event listeners
+joinLobbyBtn?.addEventListener("click", toggleLobby);
+inviteBtn?.addEventListener("click", copyInviteUrl);
+adminPlayBtn?.addEventListener("click", adminPlay);
+adminPlayBotBtn?.addEventListener("click", adminPlayBot);
+startCompBtn?.addEventListener("click", startTournament);
+copyServerUrlBtn?.addEventListener("click", copyServerUrl);
+
 // Initialize server URL from URL parameter or default to localhost
 initializeServerUrl();
+
+// Show/hide admin-only elements
+document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin() ? '' : 'none';
+});
+
+// Initialize lobby UI state
+updateLobbyButton();
 
 // Fetch server settings and status on load
 fetchServerStatus();
@@ -108,6 +135,20 @@ function initializeServerUrl() {
         serverUrlInput.value = "ws://localhost:8765/ws/";
     }
 }
+
+// Read admin token from URL parameter
+const urlParams = new URLSearchParams(window.location.search);
+const adminToken = urlParams.get('admin');
+
+function isAdmin() { 
+    return !!adminToken; 
+}
+
+// Lobby state tracking
+let inLobby = false;
+let lobbyPlayers = [];
+let lobbySlotAssignments = [];
+let serverLobbyMode = false;
 
 function onServerUrlChange() {
     showLoadingState();
@@ -171,6 +212,12 @@ async function fetchServerStatus() {
                 serverSettings.fruits = statusData.fruits;
                 updateFoodItemsDisplay();
             }
+            
+            // Check for lobby mode
+            if (statusData.lobby_mode !== undefined) {
+                serverLobbyMode = statusData.lobby_mode;
+            }
+            
             updateEntryScreenStatus(statusData);
         }
         
@@ -187,6 +234,25 @@ async function fetchServerStatus() {
             updateCompetitionDisplay(compData);
         }
         
+        // Fetch lobby data if in lobby mode
+        if (serverLobbyMode) {
+            try {
+                const lobbyResponse = await fetch(httpUrl + "/lobby");
+                if (lobbyResponse.ok) {
+                    const lobbyData = await lobbyResponse.json();
+                    lobbyPlayers = lobbyData.players || [];
+                    lobbySlotAssignments = lobbyData.slot_assignments || [];
+                    updateLobbyPanel();
+                }
+            } catch (e) {
+                // Lobby endpoint might not exist on older servers
+                console.warn("Lobby endpoint not available:", e);
+            }
+            
+            // Update admin button visibility
+            updateAdminButtonVisibility();
+        }
+        
         // Fetch championship history
         const historyResponse = await fetch(httpUrl + "/history");
         if (historyResponse.ok) {
@@ -195,6 +261,9 @@ async function fetchServerStatus() {
         }
         
         updateServerSettingsDisplay(true);
+        
+        // Update UI state after determining lobby mode
+        updateAdminButtonVisibility();
     } catch (e) {
         // Server not reachable
         if (playStatus) playStatus.textContent = "Server unavailable";
@@ -641,18 +710,39 @@ function connectWebSocket(wsUrl) {
     }
 
     ws.onopen = () => {
-        setupPanel.classList.add("hidden");
-        gamePanel.classList.remove("hidden");
+        if (serverLobbyMode && !isObserver) {
+            // In lobby mode for regular players, don't switch to game panel immediately
+            // Stay on setup panel until match_assigned
+            setStatus("Connected to lobby. Waiting for match assignment...", "waiting");
+        } else {
+            // Normal behavior: switch to game panel
+            setupPanel.classList.add("hidden");
+            gamePanel.classList.remove("hidden");
+        }
         
         if (isObserver) {
             readyBtn.classList.add("hidden");
             setStatus("Waiting for match to begin...", "waiting");
+            if (!serverLobbyMode) {
+                setupPanel.classList.add("hidden");
+                gamePanel.classList.remove("hidden");
+            }
         } else {
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Start Match";
             restorePlayerInstructions();
-            setStatus("Connected! Click Ready to start.", "waiting");
+            
+            if (!serverLobbyMode) {
+                setStatus("Connected! Click Ready to start.", "waiting");
+            }
         }
+        
+        // Send the ready message with player name
+        if (ws.readyState === WebSocket.OPEN) {
+            const msg = { action: "ready", name: playerName };
+            ws.send(JSON.stringify(msg));
+        }
+        
         updateFoodItemsDisplay();
     };
 
@@ -940,6 +1030,14 @@ function handleMessage(data) {
             isObserver = false;
             pointsToWin = data.points_to_win || 5;
             serverSettings.pointsToWin = pointsToWin;
+            
+            // Switch to game panel if we were waiting in lobby mode
+            if (serverLobbyMode && setupPanel && !setupPanel.classList.contains("hidden")) {
+                setupPanel.classList.add("hidden");
+                gamePanel.classList.remove("hidden");
+                restorePlayerInstructions();
+            }
+            
             setStatus(`Round begins. Click Start Round to begin.`, "waiting");
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Start Round";
@@ -1058,6 +1156,36 @@ function handleMessage(data) {
             if (data.competition_status) {
                 serverSettings.pointsToWin = data.competition_status.points_to_win || 5;
                 updateServerSettingsDisplay();
+            }
+            break;
+            
+        // New lobby mode cases
+        case "lobby_update":
+            lobbyPlayers = data.players || [];
+            lobbySlotAssignments = data.slot_assignments || [];
+            updateLobbyPanel();
+            break;
+            
+        case "lobby_joined":
+            inLobby = true;
+            updateLobbyButton();
+            setStatus("Joined lobby. Waiting for competition to start...", "waiting");
+            break;
+            
+        case "lobby_left":
+            inLobby = false;
+            updateLobbyButton();
+            setStatus("Left lobby.", "waiting");
+            break;
+            
+        case "lobby_kicked":
+            alert("You have been kicked from the lobby.");
+            setStatus("Kicked from lobby.", "error");
+            inLobby = false;
+            updateLobbyButton();
+            if (ws) {
+                ws.close();
+                ws = null;
             }
             break;
     }
@@ -1455,4 +1583,335 @@ function restorePlayerInstructions() {
     if (instructionsDiv && originalInstructionsHtml) {
         instructionsDiv.innerHTML = originalInstructionsHtml;
     }
+}
+
+// Lobby mode functions
+
+function updateLobbyPanel() {
+    const list = document.getElementById('lobby-player-list');
+    if (!list) return;
+    
+    list.innerHTML = '';
+    
+    if (!serverLobbyMode) {
+        list.innerHTML = '<p>Lobby not available</p>';
+        return;
+    }
+    
+    if (lobbyPlayers.length === 0) {
+        list.innerHTML = '<p>No players in lobby</p>';
+        return;
+    }
+    
+    lobbyPlayers.forEach(player => {
+        const item = document.createElement('div');
+        item.className = 'lobby-player-item';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = player.name || 'Unknown';
+        nameSpan.className = player.in_slot ? 'lobby-player-assigned' : 'lobby-player-waiting';
+        item.appendChild(nameSpan);
+        
+        if (isAdmin()) {
+            const addBtn = document.createElement('button');
+            addBtn.textContent = 'Add';
+            addBtn.className = 'btn-add-to-slot';
+            addBtn.onclick = () => lobbyAddToSlot(player.uid);
+            addBtn.disabled = player.in_slot;
+            
+            const kickBtn = document.createElement('button');
+            kickBtn.textContent = 'Kick';
+            kickBtn.className = 'btn-kick';
+            kickBtn.onclick = () => lobbyKick(player.uid);
+            
+            item.appendChild(addBtn);
+            item.appendChild(kickBtn);
+        }
+        
+        list.appendChild(item);
+    });
+}
+
+function updateLobbyButton() {
+    if (!joinLobbyBtn) return;
+    
+    if (inLobby) {
+        joinLobbyBtn.textContent = 'Leave Lobby';
+        joinLobbyBtn.style.background = '#e67e22'; // Orange
+    } else {
+        joinLobbyBtn.textContent = 'Join Lobby';
+        joinLobbyBtn.style.background = '#27ae60'; // Green
+    }
+}
+
+function updateAdminButtonVisibility() {
+    // Show/hide admin elements based on admin status AND lobby mode
+    const isAdminAndLobbyMode = isAdmin() && serverLobbyMode;
+    
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = isAdminAndLobbyMode ? '' : 'none';
+    });
+    
+    // Show/hide AI controls based on lobby mode (admin-only in lobby mode, always visible otherwise)
+    const aiControls = document.querySelector('.ai-controls');
+    if (aiControls) {
+        if (serverLobbyMode) {
+            // In lobby mode, only show to admins
+            aiControls.style.display = isAdmin() ? '' : 'none';
+        } else {
+            // In normal mode, always show
+            aiControls.style.display = '';
+        }
+    }
+    
+    // Show/hide lobby vs non-lobby buttons
+    if (serverLobbyMode) {
+        // Hide original buttons, show lobby buttons
+        if (playBtn) playBtn.style.display = 'none';
+        if (playBotBtn) playBotBtn.style.display = 'none';
+        if (joinLobbyBtn) joinLobbyBtn.style.display = '';
+        if (inviteBtn) inviteBtn.style.display = '';
+        
+        // Show the note about creating bots
+        const noteElement = document.querySelector('.note');
+        if (noteElement) noteElement.style.display = '';
+    } else {
+        // Show original buttons, hide lobby buttons  
+        if (playBtn) playBtn.style.display = '';
+        if (playBotBtn) playBotBtn.style.display = '';
+        if (joinLobbyBtn) joinLobbyBtn.style.display = 'none';
+        if (inviteBtn) inviteBtn.style.display = 'none';
+        
+        // Hide the note about creating bots
+        const noteElement = document.querySelector('.note');
+        if (noteElement) noteElement.style.display = 'none';
+    }
+    
+    // Show observer card only when not in lobby mode
+    const observerCard = document.querySelector('.observer-card');
+    if (observerCard) {
+        observerCard.style.display = serverLobbyMode ? 'none' : 'block';
+    }
+}
+
+async function toggleLobby() {
+    if (!serverLobbyMode) {
+        alert('Lobby mode is not enabled on this server.');
+        return;
+    }
+    
+    if (inLobby) {
+        // Leave lobby
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ action: "leave_lobby" }));
+        }
+    } else {
+        // Join lobby
+        playerName = playerNameInput.value.trim() || "Human";
+        connectToLobby();
+    }
+}
+
+function connectToLobby() {
+    const wsUrl = getServerUrl();
+    if (!wsUrl) {
+        setStatus("Invalid server URL", "error");
+        return;
+    }
+    
+    // Connect to lobby-specific endpoint
+    const lobbyWsUrl = wsUrl.replace('/ws/', '/ws/join');
+    
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+    
+    setStatus("Connecting to lobby...", "waiting");
+    
+    ws = new WebSocket(lobbyWsUrl);
+    
+    ws.onopen = () => {
+        // Send ready message to join lobby
+        const msg = { action: "ready", name: playerName };
+        ws.send(JSON.stringify(msg));
+    };
+    
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleMessage(data);
+    };
+    
+    ws.onclose = (event) => {
+        if (event.code === 4003) {
+            setStatus("Unable to join lobby", "error");
+        } else {
+            setStatus("Disconnected from lobby", "error");
+        }
+        inLobby = false;
+        updateLobbyButton();
+    };
+    
+    ws.onerror = () => {
+        setStatus("Connection failed", "error");
+        inLobby = false;
+        updateLobbyButton();
+    };
+}
+
+// Admin HTTP action functions
+async function lobbyKick(uid) {
+    if (!isAdmin() || !adminToken) return;
+    
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/lobby/kick?uid=${uid}&admin_token=${adminToken}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            alert('Failed to kick player');
+        }
+        // Server will send lobby_update message to refresh the list
+    } catch (e) {
+        alert('Error kicking player: ' + e.message);
+    }
+}
+
+async function lobbyAddToSlot(uid) {
+    if (!isAdmin() || !adminToken) return;
+    
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/lobby/add_to_slot?uid=${uid}&admin_token=${adminToken}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            alert('Failed to add player to slot');
+        }
+        // Server will send lobby_update message to refresh the list
+    } catch (e) {
+        alert('Error adding player to slot: ' + e.message);
+    }
+}
+
+async function startTournament() {
+    if (!isAdmin() || !adminToken) return;
+    
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/start_tournament?admin_token=${adminToken}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            alert('Failed to start tournament');
+        }
+        // Server will handle starting the tournament
+    } catch (e) {
+        alert('Error starting tournament: ' + e.message);
+    }
+}
+
+async function adminPlay() {
+    if (!isAdmin() || !adminToken) return;
+    
+    playerName = playerNameInput.value.trim() || "Admin";
+    
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/lobby/play?admin_token=${adminToken}&name=${encodeURIComponent(playerName)}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            alert('Failed to join as admin');
+            return;
+        }
+        
+        // Connect normally after server adds admin to competition
+        connectWithMode();
+    } catch (e) {
+        alert('Error joining as admin: ' + e.message);
+    }
+}
+
+async function adminPlayBot() {
+    if (!isAdmin() || !adminToken) return;
+    
+    playerName = playerNameInput.value.trim() || "Admin";
+    
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/lobby/play_bot?admin_token=${adminToken}&name=${encodeURIComponent(playerName)}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            alert('Failed to start admin vs bot match');
+            return;
+        }
+        
+        // Connect normally after server sets up the match
+        connectWithMode();
+    } catch (e) {
+        alert('Error starting admin vs bot match: ' + e.message);
+    }
+}
+
+// Copy to clipboard functions
+function copyInviteUrl() {
+    const serverUrl = getServerUrl();
+    if (!serverUrl) {
+        alert('No server URL available');
+        return;
+    }
+    
+    // Create client URL with server parameter
+    const clientUrl = window.location.origin + window.location.pathname + '?server=' + encodeURIComponent(serverUrl);
+    
+    navigator.clipboard.writeText(clientUrl).then(() => {
+        showCopyToast();
+    }).catch(() => {
+        alert('Failed to copy to clipboard');
+    });
+}
+
+function copyServerUrl() {
+    const serverUrl = getServerUrl();
+    if (!serverUrl) {
+        alert('No server URL available');
+        return;
+    }
+    
+    navigator.clipboard.writeText(serverUrl).then(() => {
+        showCopyToast();
+    }).catch(() => {
+        alert('Failed to copy to clipboard');
+    });
+}
+
+function showCopyToast() {
+    if (!copyToast) return;
+    
+    copyToast.classList.add('show');
+    setTimeout(() => {
+        copyToast.classList.remove('show');
+    }, 2000);
 }

@@ -61,6 +61,7 @@ Show round table with all matches in Round 1. All scores are listed as 0-0 in re
 
 * "Add Bot" (blue) - adds a CopperBot opponent to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
 * "Start Competition" (green if no slots are open, blue otherwise) - starts the competition immediately, filling any open slots from the lobby and then (if necessary) with CopperBots of random difficulty. 
+  * "[Checkbox] Start when full". If checked, the competition will automatically start as soon as all slots in the current round are filled by players from the lobby or added bots. If unchecked, the administrator must click "Start Competition" to begin the tournament once players have joined. Defaults according to server `lobby-mode` setting.
 
 #### During Rounds
 
