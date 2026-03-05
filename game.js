@@ -101,9 +101,10 @@ copyServerUrlBtn?.addEventListener("click", copyServerUrl);
 
 // Read admin token from URL parameter
 const adminToken = new URLSearchParams(window.location.search).get('admin');
+let adminValidated = false; // True once admin token has been verified with server
 
 function isAdmin() { 
-    return !!adminToken; 
+    return !!adminToken && adminValidated; 
 }
 
 // Lobby state tracking
@@ -115,17 +116,70 @@ let serverLobbyMode = false;
 // Initialize server URL from URL parameter or default to localhost
 initializeServerUrl();
 
-// Show/hide admin-only elements
-document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = isAdmin() ? '' : 'none';
-});
+// If admin token provided, validate it before showing the UI
+if (adminToken) {
+    validateAdminToken().then(valid => {
+        if (valid) {
+            adminValidated = true;
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = '';
+            });
+            fetchServerStatus();
+            startStatusPolling();
+        }
+        // If invalid, validateAdminToken() already shows the error page
+    });
+} else {
+    // No admin token - normal player/observer mode
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = 'none';
+    });
+    updateLobbyButton();
+    fetchServerStatus();
+    startStatusPolling();
+}
 
-// Initialize lobby UI state
-updateLobbyButton();
+// Validate the admin token against the server.
+// If invalid, replaces the page with an error message and returns false.
+async function validateAdminToken() {
+    const baseUrl = getServerUrl();
+    if (!baseUrl) {
+        showAdminError("No server URL configured.");
+        return false;
+    }
+    
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        // Use the /lobby endpoint with admin_token to validate
+        const response = await fetch(httpUrl + "/lobby/kick?uid=__validate__&admin_token=" + encodeURIComponent(adminToken), { method: "POST" });
+        
+        if (response.status === 403) {
+            showAdminError("Invalid admin token. Please check the admin URL from the server console.");
+            return false;
+        }
+        // 404 means the token was valid but the uid wasn't found — that's fine
+        return true;
+    } catch (e) {
+        showAdminError("Cannot connect to server to validate admin token.");
+        return false;
+    }
+}
 
-// Fetch server settings and status on load
-fetchServerStatus();
-startStatusPolling();
+// Replace the page with an admin authentication error
+function showAdminError(message) {
+    const container = document.getElementById("container");
+    container.innerHTML = `
+        <div style="text-align: center; padding: 60px 20px; color: #e74c3c;">
+            <h1>🐍 CopperHead</h1>
+            <h2>⚠️ Admin Authentication Failed</h2>
+            <p style="color: #ccc; font-size: 1.1em; margin: 20px auto; max-width: 500px;">${message}</p>
+            <p style="color: #888; margin-top: 30px;">
+                <a href="${window.location.pathname}?server=${encodeURIComponent(getServerUrl())}" 
+                   style="color: #3498db;">Continue as a player instead</a>
+            </p>
+        </div>
+    `;
+}
 
 // Debounce helper for custom URL input
 function debounce(func, wait) {
