@@ -380,14 +380,15 @@ function updateEntryScreenStatus(statusData) {
             // Keep showing "Adding..." while bots are connecting
             addAiBtn.disabled = true;
             addAiBtn.textContent = "Adding...";
-            // Clear the flag once all bots have connected or slots are full
+            // Clear the flag once bot has connected
             if (!hasOpenMatches || (lastOpenSlots !== null && openSlots < lastOpenSlots)) {
                 botsBeingAdded = false;
                 addAiBtn.textContent = "Add Bot";
-                addAiBtn.disabled = !hasOpenMatches;
+                addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
             }
         } else {
-            addAiBtn.disabled = !hasOpenMatches;
+            // In lobby mode, always enabled (adds to lobby, not competition)
+            addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
         }
         lastOpenSlots = openSlots;
     }
@@ -679,7 +680,7 @@ async function addAiPlayer() {
             addAiBtn.textContent = "Failed";
             setTimeout(() => {
                 addAiBtn.textContent = "Add Bot";
-                addAiBtn.disabled = !hasOpenMatches;
+                addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
             }, 1500);
         }
     } catch (e) {
@@ -687,7 +688,7 @@ async function addAiPlayer() {
         addAiBtn.textContent = "Error";
         setTimeout(() => {
             addAiBtn.textContent = "Add Bot";
-            addAiBtn.disabled = !hasOpenMatches;
+            addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
         }, 1500);
     }
 }
