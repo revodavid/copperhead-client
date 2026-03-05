@@ -59,8 +59,7 @@ Show round table with all matches in Round 1. All scores are listed as 0-0 in re
 
 *These buttons are only shown if the user is the server administrator*
 
-* "Add Bot" (blue) - adds a CopperBot opponent to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
-* "Start Competition" (green if no slots are open, blue otherwise) - starts the competition immediately, filling any open slots from the lobby and then (if necessary) with CopperBots of random difficulty. 
+* "Start Competition" (green if no slots are open, orange if there are sufficient players in the lobby to full open slots, and blue otherwise) - starts the competition immediately, filling any open slots from the lobby and then (if necessary) with CopperBots of random difficulty. 
 * "[Checkbox] Automatically add players and start game". If checked, players are admitted from the lobby to the competition automatically as they join, and the competition starts as soon as enough players have joined to fill all slots in Round 1. If unchecked, the administrator must click "Start Competition" to admit players from the lobby and start the competition. Defaults according to server `lobby-mode` setting.
 
 #### During Rounds
@@ -104,6 +103,16 @@ Show a list of players waiting in the lobby by name.
 Next to each player, include the following buttons:
 * "Kick" (red) - removes the player from the lobby
 * "Add" (green) - moves the player from the lobby to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
+
+Below the list of players, include this button:
+
+* "Add Bot [Level]" (blue) - adds a CopperBot opponent to the lobby. [Level] is a dropdown allowing the administrator to select the bot difficulty level (1-10) before adding the bot to the lobby. Valid values for the dropdown are:
+  * Random 
+  * Level 1 (least difficult)
+  * Level 2
+  ...
+  * Level 10 (most difficult)
+The defult selection is: Random.
 
 ### Server settings (bottom, centered)
 

@@ -414,9 +414,10 @@ function updateEntryScreenStatus(statusData) {
             for (let i = 0; i < maxPlayers; i += 2) {
                 const p1 = lobbySlotAssignments[i]?.name || "Waiting...";
                 const p2 = lobbySlotAssignments[i + 1]?.name || "Waiting...";
+                // Red 0-0 scores before competition starts
                 rows.push(`<tr>
                     <td>${p1}</td>
-                    <td class="score">0 - 0</td>
+                    <td class="score"><span style="color: #e74c3c;">0</span> - <span style="color: #e74c3c;">0</span></td>
                     <td>${p2}</td>
                     <td></td>
                 </tr>`);
@@ -446,16 +447,29 @@ function updateEntryScreenStatus(statusData) {
             const matchComplete = room.match_complete || s1 >= pointsToWin || s2 >= pointsToWin;
             const p1Won = s1 >= pointsToWin;
             const p2Won = s2 >= pointsToWin;
+            const inProgress = !matchComplete && p1Connected && p2Connected;
             
-            // Format scores with green for winner
-            const s1Style = p1Won ? 'style="color: #2ecc71; font-weight: bold;"' : '';
-            const s2Style = p2Won ? 'style="color: #2ecc71; font-weight: bold;"' : '';
+            // Score colors: green for winner, orange for loser, orange for active games, red for 0-0 waiting
+            let s1Style = '';
+            let s2Style = '';
+            if (matchComplete) {
+                // Green for winner, orange for loser
+                s1Style = p1Won ? 'style="color: #2ecc71; font-weight: bold;"' : 'style="color: #e67e22;"';
+                s2Style = p2Won ? 'style="color: #2ecc71; font-weight: bold;"' : 'style="color: #e67e22;"';
+            } else if (inProgress) {
+                // Orange for active game scores
+                s1Style = 'style="color: #e67e22;"';
+                s2Style = 'style="color: #e67e22;"';
+            } else if (s1 === 0 && s2 === 0) {
+                // Red for 0-0 pre-match
+                s1Style = 'style="color: #e74c3c;"';
+                s2Style = 'style="color: #e74c3c;"';
+            }
             
             // Add visual indicator for completed matches
             const rowClass = matchComplete ? 'match-complete-row' : '';
             
             // Show Observe button for in-progress (non-complete) matches with players
-            const inProgress = !matchComplete && p1Connected && p2Connected;
             const observeCell = inProgress 
                 ? `<td><button class="btn-observe-match" onclick="observeRoom('${room.room_id}')">Observe</button></td>`
                 : `<td></td>`;
@@ -1766,6 +1780,15 @@ function updateLobbyPanel() {
         
         list.appendChild(item);
     });
+    
+    // Show a "Leave Lobby" button at the bottom of the panel when the player is in the lobby
+    if (inLobby) {
+        const leaveBtn = document.createElement('button');
+        leaveBtn.textContent = 'Leave Lobby';
+        leaveBtn.className = 'btn-leave-lobby-panel';
+        leaveBtn.onclick = () => toggleLobby();
+        list.appendChild(leaveBtn);
+    }
 }
 
 function updateLobbyButton() {
