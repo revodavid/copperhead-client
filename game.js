@@ -653,27 +653,13 @@ async function addAiPlayer() {
         if (serverLobbyMode) {
             const adminParam = adminToken ? `&admin_token=${adminToken}` : '';
             
-            if (difficultyValue === "fill") {
-                // Fill remaining slots with random bots
-                const lobbyResponse = await fetch(httpUrl + "/lobby");
-                if (lobbyResponse.ok) {
-                    const lobbyData = await lobbyResponse.json();
-                    const openSlots = lobbyData.open_slots || 0;
-                    for (let i = 0; i < openSlots; i++) {
-                        const randomDifficulty = Math.floor(Math.random() * 10) + 1;
-                        const resp = await fetch(httpUrl + `/lobby/add_bot?difficulty=${randomDifficulty}${adminParam}`, { method: "POST" });
-                        if (!resp.ok) break;
-                    }
-                }
-            } else {
-                const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
-                const resp = await fetch(httpUrl + `/lobby/add_bot?difficulty=${difficulty}${adminParam}`, { method: "POST" });
-                if (!resp.ok) {
-                    botsBeingAdded = false;
-                    addAiBtn.textContent = "Failed";
-                    setTimeout(() => { addAiBtn.textContent = "Add Bot"; addAiBtn.disabled = false; }, 1500);
-                    return;
-                }
+            const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
+            const resp = await fetch(httpUrl + `/lobby/add_bot?difficulty=${difficulty}${adminParam}`, { method: "POST" });
+            if (!resp.ok) {
+                botsBeingAdded = false;
+                addAiBtn.textContent = "Failed";
+                setTimeout(() => { addAiBtn.textContent = "Add Bot"; addAiBtn.disabled = false; }, 1500);
+                return;
             }
             
             botsBeingAdded = false;
@@ -682,54 +668,19 @@ async function addAiPlayer() {
             return;
         }
         
-        if (difficultyValue === "fill") {
-            // Fill all available slots with random difficulty bots
-            // First get the current status to find open slots
-            const statusResponse = await fetch(httpUrl + "/status");
-            if (!statusResponse.ok) {
-                throw new Error("Failed to get server status");
-            }
-            const statusData = await statusResponse.json();
-            const openSlots = statusData.open_slots || 0;
-            
-            if (openSlots === 0) {
-                botsBeingAdded = false;
-                addAiBtn.textContent = "Add Bot";
-                await fetchServerStatus();
-                return;
-            }
-            
-            // Add Bot one at a time with random difficulties
-            // Stop early if a slot gets taken by another player
-            let successCount = 0;
-            for (let i = 0; i < openSlots; i++) {
-                const randomDifficulty = Math.floor(Math.random() * 10) + 1;
-                const response = await fetch(httpUrl + "/add_bot?difficulty=" + randomDifficulty, { method: "POST" });
-                if (response.ok) {
-                    successCount++;
-                } else {
-                    // Slot may have been taken by another player, stop filling
-                    break;
-                }
-            }
-            
+        // Add a single bot with specified or random difficulty
+        const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
+        const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
+        if (response.ok) {
             // Let fetchServerStatus handle button state via botsBeingAdded flag
             await fetchServerStatus();
         } else {
-            // Add a single bot with specified or random difficulty
-            const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
-            const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
-            if (response.ok) {
-                // Let fetchServerStatus handle button state via botsBeingAdded flag
-                await fetchServerStatus();
-            } else {
-                botsBeingAdded = false;
-                addAiBtn.textContent = "Failed";
-                setTimeout(() => {
-                    addAiBtn.textContent = "Add Bot";
-                    addAiBtn.disabled = !hasOpenMatches;
-                }, 1500);
-            }
+            botsBeingAdded = false;
+            addAiBtn.textContent = "Failed";
+            setTimeout(() => {
+                addAiBtn.textContent = "Add Bot";
+                addAiBtn.disabled = !hasOpenMatches;
+            }, 1500);
         }
     } catch (e) {
         botsBeingAdded = false;
@@ -1811,17 +1762,8 @@ function updateAdminButtonVisibility() {
         el.style.display = isAdminAndLobbyMode ? '' : 'none';
     });
     
-    // Show/hide AI controls based on lobby mode (admin-only in lobby mode, always visible otherwise)
-    const aiControls = document.querySelector('.ai-controls');
-    if (aiControls) {
-        if (serverLobbyMode) {
-            // In lobby mode, only show to admins
-            aiControls.style.display = isAdmin() ? '' : 'none';
-        } else {
-            // In normal mode, always show
-            aiControls.style.display = '';
-        }
-    }
+    // Show/hide AI controls - now in lobby panel, always admin-only
+    // (handled by .admin-only selector above, no separate logic needed)
     
     // Show/hide lobby vs non-lobby buttons
     if (serverLobbyMode) {
