@@ -1,8 +1,10 @@
 # Instructions for building Client UI
 
-## Entry screen
+## Lobby screen
 
-Also referred to as the "Lobby", this screen appears when first launching the client.
+Also referred to as the "Entry Screen", this screen appears when first launching the client.
+
+*This page has two modes: Administrator and Player. In Player mode, the UI allows a human player to join a lobby and play games, or to observe games in progress. In Administrator mode, the UI additionally allows the server owner skip the lobby to join the tournament, and to manage players in the lobby, and add bots to the competition.*
 
 ### Header (top, centered)
 
@@ -12,65 +14,101 @@ Tagline: "Compete against human and AI players in a knockout Snake Game tourname
 
 ### Connect to a Server (top, centered)
 
-Looking for a server? Launch one in GitHub CodeSpaces: [link to copperhead-server repo]
+Looking for a server? Launch one in [GitHub CodeSpaces](https://github.com/revodavid/copperhead-server).
 
 * Your Name: [Free text. Default: Human]
-* Server URL: [Drop down. Default: Local]
-  - Local: [Provides ws://localhost:8765/ws]
-  - CodeSpaces: [user may enter name of their CodeSpace, e.g., bookish-fortnight-1234]
-  - Custom: [Free text, user will provide full WebSocket URL]
-* Server URL free text box: appears to the right of the drop down if "Custom" or "CodeSpaces" is selected
+* Server URL: [Free text. Default: ws://localhost:8765/ws]
 
-### Join the Competition (middle, left)
+### Join the Competition (middle row, left)
 
-Button "Join" adds the user to Round 1 of the competition. This adds the user as a player in the first open match on the server if Round 1 is active and waiting for players.
+*This buttons section of the UI is designed to make it easy for the human user of the client to jump in and play a game against a human or bot oppponent*
 
-There is a button below "Join" labeled "Play Bot". In the special case of a competion with just one arena, this button is enabled and adds the user and a random CopperBot opponent to the single match in Round 1 for immediate play.
+* "Join Lobby" (green) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange)and allows the user to leave the lobby.
 
-Once all Competition slots are filled, the competition starts and the Play button is disabled and changes to "Competition in Progress" until the next competition begins.
+* "Invite ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. A message "URL copied to clipboard!" appears briefly when the button is clicked.
 
-### Competition Status (middle, center)
+Include this note: [Create your own bot to play against](https://github.com/revodavid/copperhead-bot).
 
-Title: 🏆 Competition Status
+*If the user is the server administrator, also include these buttons:*
 
-Subtitle is context dependent:
-  - Competition not started: "Waiting for players to join... (X/Y)" with X = current players, Y = total slots
-  - Round underway: "Round X in Progress" with X = current round number
-  - Between rounds: "Round X Complete! Next round starting in Y seconds..." with X = completed round number, Y = countdown to next round
-  - Competition complete: "Winner: <Playername>! New competition starting in Y seconds..." Y = countdown to new competition
+* "Play" (green) - adds the user directly to the competition, skipping the lobby. If the competition has already started, this button is disabled.
 
-Below show a table of matches:
- - Before competition start: Table of all matches in Round 1 (one row per match), showing player names or "Waiting..." for empty slots.
- - Current round underway: Table of matches in current round (one row per match), showing player names and live scores.
-   - For completed rounds, show final scores with the winner's score in green
- - Between rounds: Table of matches in completed round (one row per match), showing final scores with the winner's score in green
- - Competition complete: Larger final-round scoreboard with winner score highlighted in green.
+* "Play Bot" (blue) - adds the user and a random difficulty CopperBot opponent to the single match in Round 1 for immediate play. This button is only shown in the special case of a competition with exactly one arena.
 
-Below the table: AI button
- - Include a button at the bottom to add an AI player
- - Include a dropdown to the right of the button to select difficulty of added AI player (1-10, or "Random") or to add random bots until the server is full or ("Fill"). The default is "Random".
-   - 1, 2, ... 10: Adds one Copperbot at selected difficulty level (e.g. Copperbot L5
-   - Random: Adds one Copperbot at a random difficulty level (1-10)
-   - Fill: Adds multiple random copperbots to fill all available slots. The button reads "Add Bots" instead of "Add Bot" when this option is selected.
- - The button has the following states:
-    - Before competition start: "Add Bot" (active appearance)
-      - After click: "Adding..." (disabled appearance)
-      - After all bots are confirmed added: revert to appropriate "Add Bot" state
-    - Competition underway: "Add Bot" (disabled appearance)
-    - Between rounds: "Add Bot" (disabled appearance)
-    - Competition complete: "Add Bot" (disabled appearance)
+### Competition Status (middle row, center)
 
-#### Observe Matches (middle, right)
+*This section shows the status of the current or upcoming competition*
 
-Button launches the "Observe Game" screen.
+This section changes format depending on the current status of the competition (see below), but always includes some form of a "Round Table" showing the matches in the current or upcoming round, with player names and scores. 
 
-This button is active when a competition is in progress, allowing the user to observe any match in the current round.
+The Round Table has one row per match in the round. Each row lists the two players in each match, separated by their current score. An example row might look like this:
 
-This button is disabled if no games are in progress.
+David 0-2 Copperbot
+
+The left column (player 1 name) is jusified right. The right column (player 2 name) is justified left. The score is centered between them, centered on the - character.
+
+Scores for active games are listed in orange and updated live. Scores for completed game show the winner's score in green and the loser's score in orange.
+
+#### Between Competitions
+
+Title: 🏆 Waiting for players to join
+
+Show round table with all matches in Round 1. All scores are listed as 0-0 in red. For matches where players have not yet been assigned, diplay "Waiting..." in place of the player name.
+
+##### Administrator tools
+
+*These buttons are only shown if the user is the server administrator*
+
+* "Add Bot" (blue) - adds a CopperBot opponent to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
+* "Start Competition" (green if slots are open, blue otherwise) - starts the competition immediately, filling any open slots with CopperBots of random difficulty. 
+
+#### During Rounds
+
+Show the round table for the current round with scores updated live. For matches in progress, show scores in orange. For completed matches, show the winner's score in green and the loser's score in orange.
+
+For active games, show an "Observe" button in blue to the right of the match row that allows the user to observe the game in progress. This button appears when a game is in progress, and is not shown for completed games.
+
+#### Between Rounds
+
+Title: 🏆 Round X results
+
+Show round table for completed round, showing player names and final scores, with the winner's score in green.
+
+#### When competition ends
+
+*This screen appears during the reset delay after a competition ends, and then reverts to the Before Competition state*
+
+Title: 🏆 Competition Winner: <playername>
+
+Show the round table (1 row) for the final match, showing the winner's name and score in green, and the loser's name and score in orange.
+
+Next competion begins in: [countdown timer]
+
+### Lobby (middle, right) 
+
+*This section of the UI shows the list of players (human and AI) waiting to join a competition.*
+
+Title: 🏆 Lobby
+
+#### Player View
+
+Show a list of players waiting in the lobby by name.
+
+If the player is in the lobby, add a "Leave Lobby" button that allows the player to leave the lobby.
+
+#### Administrator View
+
+Show a list of players waiting in the lobby by name.
+
+Next to each player, include the following buttons:
+* "Kick" (red) - removes the player from the lobby
+* "Add" (green) - moves the player from the lobby to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
 
 ### Server settings (bottom, centered)
 
-Heading: ⚙️ Server (v <server version>): <websocket server URL> 
+Heading: ⚙️ Server (v <server version>): <websocket server URL>  ⧉ 
+
+*The ⧉ symbol is a "copy to clipboard" button that copies the server URL to the user's clipboard.*
 
 Below, list the settings defined in the server that control the game and competition. Exclude "Arenas".
 
