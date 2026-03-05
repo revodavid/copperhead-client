@@ -109,7 +109,7 @@ function isAdmin() {
 let inLobby = false;
 let lobbyPlayers = [];
 let lobbySlotAssignments = [];
-let serverLobbyMode = false;
+let serverLobbyMode = true;  // Lobby is always active
 
 // Initialize server URL from URL parameter or default to localhost
 initializeServerUrl();
@@ -258,11 +258,6 @@ async function fetchServerStatus() {
             if (statusData.fruits) {
                 serverSettings.fruits = statusData.fruits;
                 updateFoodItemsDisplay();
-            }
-            
-            // Check for lobby mode (auto_start: false means lobby is active)
-            if (statusData.auto_start !== undefined) {
-                serverLobbyMode = !statusData.auto_start;
             }
             
             updateEntryScreenStatus(statusData);
