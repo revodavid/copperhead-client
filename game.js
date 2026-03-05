@@ -1759,7 +1759,9 @@ function updateAdminButtonVisibility() {
     const isAdminAndLobbyMode = isAdmin() && serverLobbyMode;
     
     document.querySelectorAll('.admin-only').forEach(el => {
-        el.style.display = isAdminAndLobbyMode ? 'block' : 'none';
+        // Use flex for ai-controls (button + dropdown side by side), block for others
+        const displayValue = el.classList.contains('ai-controls') ? 'flex' : 'block';
+        el.style.display = isAdminAndLobbyMode ? displayValue : 'none';
     });
     
     // Show/hide AI controls - now in lobby panel, always admin-only
