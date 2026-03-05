@@ -573,6 +573,32 @@ async function addAiPlayer() {
     try {
         const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
         
+        // In lobby mode, use the lobby endpoint (requires admin token)
+        if (serverLobbyMode) {
+            const adminParam = adminToken ? `&admin_token=${adminToken}` : '';
+            
+            if (difficultyValue === "fill") {
+                // Fill remaining slots with random bots
+                const lobbyResponse = await fetch(httpUrl + "/lobby");
+                if (lobbyResponse.ok) {
+                    const lobbyData = await lobbyResponse.json();
+                    const openSlots = lobbyData.open_slots || 0;
+                    for (let i = 0; i < openSlots; i++) {
+                        const randomDifficulty = Math.floor(Math.random() * 10) + 1;
+                        await fetch(httpUrl + `/lobby/add_bot?difficulty=${randomDifficulty}${adminParam}`, { method: "POST" });
+                    }
+                }
+            } else {
+                const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
+                await fetch(httpUrl + `/lobby/add_bot?difficulty=${difficulty}${adminParam}`, { method: "POST" });
+            }
+            
+            botsBeingAdded = false;
+            addAiBtn.textContent = "Add Bot";
+            await fetchServerStatus();
+            return;
+        }
+        
         if (difficultyValue === "fill") {
             // Fill all available slots with random difficulty bots
             // First get the current status to find open slots
