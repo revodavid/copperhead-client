@@ -116,7 +116,7 @@ Show a list of players waiting in the lobby by name.
 
 Next to each player, include the following buttons:
 * "Kick" (red) - removes the player from the lobby
-* "Add" (green) - moves the player from the lobby to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
+* "Admit" (green) - moves the player from the lobby to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
 
 Below the list of players, include this button:
 

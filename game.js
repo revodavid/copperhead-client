@@ -1726,7 +1726,7 @@ function updateLobbyPanel() {
         
         if (isAdmin()) {
             const addBtn = document.createElement('button');
-            addBtn.textContent = 'Add';
+            addBtn.textContent = 'Admit';
             addBtn.className = 'btn-add-to-slot';
             addBtn.onclick = () => lobbyAddToSlot(player.uid);
             addBtn.disabled = player.in_slot;
