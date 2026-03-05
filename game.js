@@ -671,9 +671,13 @@ async function addAiPlayer() {
                 return;
             }
             
-            botsBeingAdded = false;
-            addAiBtn.textContent = "Add Bot";
-            await fetchServerStatus();
+            // Bot spawns as a subprocess — keep "Adding..." state while it connects
+            setTimeout(async () => {
+                botsBeingAdded = false;
+                addAiBtn.textContent = "Add Bot";
+                addAiBtn.disabled = false;
+                await fetchServerStatus();
+            }, 2000);
             return;
         }
         
