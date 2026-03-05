@@ -787,6 +787,13 @@ input[type="range"] {
     background: #2980b9;
 }
 
+.start-comp-note {
+    font-size: 0.8em;
+    color: #aaa;
+    margin: 4px 0 0 0;
+    text-align: center;
+}
+
 /* Copy to clipboard toast */
 .copy-toast {
     position: fixed;
