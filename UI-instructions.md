@@ -23,17 +23,11 @@ Looking for a server? Launch one in [GitHub CodeSpaces](https://github.com/revod
 
 *This buttons section of the UI is designed to make it easy for the human user of the client to jump in and play a game against a human or bot oppponent*
 
-* "Join Lobby" (green) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange)and allows the user to leave the lobby.
+* "Join Game" (green if one slot remains in an unstarted competition when auto_start is `"always"`; orange otherwise) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange) and allows the user to leave the lobby.
 
 * "Invite Opponent ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. The message "Send the URL in the clipboard to another player to join" appears briefly when the button is clicked.
 
 Include this note: [Create your own bot to play against](https://github.com/revodavid/copperhead-bot).
-
-*If the client is in Administrator, also include these buttons:*
-
-* "Play" (green) - adds the user directly to the competition, skipping the lobby. If the competition has already started or no open slots exist, this button is disabled.
-
-* "Play Bot" (blue) - adds the user and a random difficulty CopperBot opponent to the single match in Round 1 for immediate play. This button is only shown in the special case of a competition with exactly one arena.
 
 ### Competition Status (middle row, center)
 

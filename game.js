@@ -72,8 +72,8 @@ const serverVersion = document.getElementById("server-version");
 // New lobby mode elements
 const joinLobbyBtn = document.getElementById("joinLobbyBtn");
 const inviteBtn = document.getElementById("inviteBtn");
-const adminPlayBtn = document.getElementById("adminPlayBtn");
-const adminPlayBotBtn = document.getElementById("adminPlayBotBtn");
+const adminPlayBtn = null; // Removed — admin uses Join Game like other players
+const adminPlayBotBtn = null; // Removed
 const startCompBtn = document.getElementById("startCompBtn");
 const lobbyPlayerList = document.getElementById("lobby-player-list");
 const copyServerUrlBtn = document.getElementById("copyServerUrlBtn");
@@ -92,8 +92,6 @@ serverUrlInput.addEventListener("change", onServerUrlChange);
 // New lobby mode event listeners
 joinLobbyBtn?.addEventListener("click", toggleLobby);
 inviteBtn?.addEventListener("click", copyInviteUrl);
-adminPlayBtn?.addEventListener("click", adminPlay);
-adminPlayBotBtn?.addEventListener("click", adminPlayBot);
 startCompBtn?.addEventListener("click", startTournament);
 copyServerUrlBtn?.addEventListener("click", copyServerUrl);
 
@@ -282,9 +280,11 @@ async function fetchServerStatus() {
                 const lobbyResponse = await fetch(httpUrl + "/lobby");
                 if (lobbyResponse.ok) {
                     const lobbyData = await lobbyResponse.json();
+                    window.lastLobbyData = lobbyData;
                     lobbyPlayers = lobbyData.players || [];
                     lobbySlotAssignments = lobbyData.slot_assignments || [];
                     updateLobbyPanel();
+                    updateLobbyButton();
                     
                     // Update Start Competition button color and informational note
                     if (isAdmin() && startCompBtn) {
@@ -1762,8 +1762,14 @@ function updateLobbyButton() {
         joinLobbyBtn.textContent = 'Leave Lobby';
         joinLobbyBtn.style.background = '#e67e22'; // Orange
     } else {
-        joinLobbyBtn.textContent = 'Join Lobby';
-        joinLobbyBtn.style.background = '#27ae60'; // Green
+        joinLobbyBtn.textContent = 'Join Game';
+        // Green when exactly one slot remains in an unstarted competition with auto_start "always"
+        // (joining will fill the last slot and auto-start the competition immediately)
+        const compState = window.lastCompetitionData?.state || "";
+        const openSlots = window.lastLobbyData?.open_slots ?? 99;
+        const autoStart = window.lastLobbyData?.auto_start || "";
+        const isGreen = compState === "waiting_for_players" && openSlots === 1 && autoStart === "always";
+        joinLobbyBtn.style.background = isGreen ? '#27ae60' : '#e67e22'; // Green or orange
     }
 }
 
@@ -1931,58 +1937,6 @@ async function startTournament() {
         // Server will handle starting the tournament
     } catch (e) {
         alert('Error starting tournament: ' + e.message);
-    }
-}
-
-async function adminPlay() {
-    if (!isAdmin() || !adminToken) return;
-    
-    playerName = playerNameInput.value.trim() || "Admin";
-    
-    const baseUrl = getServerUrl();
-    if (!baseUrl) return;
-    
-    try {
-        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
-        const response = await fetch(`${httpUrl}/lobby/play?admin_token=${adminToken}&name=${encodeURIComponent(playerName)}`, {
-            method: 'POST'
-        });
-        
-        if (!response.ok) {
-            alert('Failed to join as admin');
-            return;
-        }
-        
-        // Connect normally after server adds admin to competition
-        connectWithMode();
-    } catch (e) {
-        alert('Error joining as admin: ' + e.message);
-    }
-}
-
-async function adminPlayBot() {
-    if (!isAdmin() || !adminToken) return;
-    
-    playerName = playerNameInput.value.trim() || "Admin";
-    
-    const baseUrl = getServerUrl();
-    if (!baseUrl) return;
-    
-    try {
-        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
-        const response = await fetch(`${httpUrl}/lobby/play_bot?admin_token=${adminToken}&name=${encodeURIComponent(playerName)}`, {
-            method: 'POST'
-        });
-        
-        if (!response.ok) {
-            alert('Failed to start admin vs bot match');
-            return;
-        }
-        
-        // Connect normally after server sets up the match
-        connectWithMode();
-    } catch (e) {
-        alert('Error starting admin vs bot match: ' + e.message);
     }
 }
 
