@@ -289,31 +289,37 @@ async function fetchServerStatus() {
                     // Update Start Competition button color and informational note
                     if (isAdmin() && startCompBtn) {
                         const openSlots = lobbyData.open_slots || 0;
-                        const filledSlots = lobbyData.filled_slots || 0;
                         const waitingCount = lobbyPlayers.filter(p => !p.in_slot).length;
                         const autoStart = lobbyData.auto_start;
                         const note = document.getElementById("startCompNote");
                         const compState = window.lastCompetitionData?.state || "waiting_for_players";
                         
                         if (compState === "waiting_for_players") {
-                            if (openSlots === 0) {
-                                // All slots filled — green
-                                startCompBtn.style.background = "#2ecc71";
-                                if (note) note.textContent = autoStart 
-                                    ? "Game will start immediately when all slots are filled."
-                                    : "Ready to start.";
-                            } else if (waitingCount >= openSlots) {
-                                // Enough lobby players to fill — orange
-                                startCompBtn.style.background = "#e67e22";
-                                if (note) note.textContent = autoStart
-                                    ? "Game will start immediately when all slots are filled."
-                                    : "Adds players from lobby and starts.";
+                            startCompBtn.disabled = false;
+                            
+                            if (autoStart) {
+                                // auto_start ON: players auto-admitted, button adds bots if needed
+                                if (openSlots === 0) {
+                                    // All slots filled — will auto-start momentarily
+                                    startCompBtn.style.background = "#2ecc71";
+                                    if (note) note.textContent = "All slots filled — game starting...";
+                                } else {
+                                    // Open slots remain — button adds bots to fill
+                                    startCompBtn.style.background = "#3498db";
+                                    if (note) note.textContent = "Bots will be added to the competition.";
+                                }
                             } else {
-                                // Not enough players — blue
-                                startCompBtn.style.background = "#3498db";
-                                if (note) note.textContent = autoStart
-                                    ? "Game will start immediately when all slots are filled."
-                                    : "Adds players from lobby and bots, and starts.";
+                                // auto_start OFF: admin controls everything
+                                if (openSlots === 0) {
+                                    startCompBtn.style.background = "#2ecc71";
+                                    if (note) note.textContent = "Click to start.";
+                                } else if (waitingCount >= openSlots) {
+                                    startCompBtn.style.background = "#e67e22";
+                                    if (note) note.textContent = "Adds players from lobby and starts.";
+                                } else {
+                                    startCompBtn.style.background = "#3498db";
+                                    if (note) note.textContent = "Adds players from lobby and bots, and starts.";
+                                }
                             }
                         } else {
                             // Competition already running

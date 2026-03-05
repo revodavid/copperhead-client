@@ -67,13 +67,15 @@ Show round table with all matches in Round 1. All scores are listed as 0-0 in re
 Below the button, add this INFORMATIONAL NOTE according to context and the state of the auto_start server option:
 
 If auto_start is false:
- * Green: Ready to start.
- * Orange: Adds players from lobby and starts.
+ * Green: Click to start
+ * Orange: Adds players from lobby and start
  * Blue: Adds players from lobby and bots, and starts.
 
 If auto_start is true:
- * Game will start immediately when all slots are filled.
-
+ * Green: [not relevant - auto_start is enabled]
+ * Orange: [not relevant - auto_start is enabled]
+ * Blue: Bots will be added to the competition
+ 
 #### During Rounds
 
 Show the round table for the current round with scores updated live. For matches in progress, show scores in orange. For completed matches, show the winner's score in green and the loser's score in orange.
