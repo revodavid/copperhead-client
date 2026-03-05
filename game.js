@@ -344,7 +344,23 @@ function updateEntryScreenStatus(statusData) {
         const byePlayer = window.lastCompetitionData?.bye_player;
         const pointsToWin = window.lastCompetitionData?.points_to_win || 5;
         
-        // Add rows for each room/match
+        // In lobby mode while waiting, show slots from lobby data instead of room data
+        if (serverLobbyMode && compState === "waiting_for_players") {
+            // Build match rows from lobby slot assignments
+            // Each match needs 2 players; pair up slot assignments
+            const maxPlayers = arenas * 2;
+            for (let i = 0; i < maxPlayers; i += 2) {
+                const p1 = lobbySlotAssignments[i]?.name || "Waiting...";
+                const p2 = lobbySlotAssignments[i + 1]?.name || "Waiting...";
+                rows.push(`<tr>
+                    <td>${p1}</td>
+                    <td class="score">0 - 0</td>
+                    <td>${p2}</td>
+                    <td></td>
+                </tr>`);
+            }
+        } else {
+        // Standard mode or competition in progress: show room data
         for (const room of rooms) {
             const connectedPlayers = room.players || [];
             const p1Connected = connectedPlayers.includes(1);
@@ -425,6 +441,7 @@ function updateEntryScreenStatus(statusData) {
                 </tr>`);
             }
         }
+        } // end else (standard mode / competition in progress)
         
         entryMatchesBody.innerHTML = rows.join("");
     }
