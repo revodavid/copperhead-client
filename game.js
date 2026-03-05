@@ -99,6 +99,13 @@ adminPlayBotBtn?.addEventListener("click", adminPlayBot);
 startCompBtn?.addEventListener("click", startTournament);
 copyServerUrlBtn?.addEventListener("click", copyServerUrl);
 
+// Read admin token from URL parameter
+const adminToken = new URLSearchParams(window.location.search).get('admin');
+
+function isAdmin() { 
+    return !!adminToken; 
+}
+
 // Initialize server URL from URL parameter or default to localhost
 initializeServerUrl();
 
@@ -134,14 +141,6 @@ function initializeServerUrl() {
         // Default to localhost for local development
         serverUrlInput.value = "ws://localhost:8765/ws/";
     }
-}
-
-// Read admin token from URL parameter
-const urlParams = new URLSearchParams(window.location.search);
-const adminToken = urlParams.get('admin');
-
-function isAdmin() { 
-    return !!adminToken; 
 }
 
 // Lobby state tracking
