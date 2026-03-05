@@ -25,7 +25,7 @@ Looking for a server? Launch one in [GitHub CodeSpaces](https://github.com/revod
 
 * "Join Lobby" (green) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange)and allows the user to leave the lobby.
 
-* "Invite Opponent ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. A message "URL copied to clipboard!" appears briefly when the button is clicked.
+* "Invite Opponent ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. The message "Send the URL in the clipboard to another player to join" appears briefly when the button is clicked.
 
 Include this note: [Create your own bot to play against](https://github.com/revodavid/copperhead-bot).
 

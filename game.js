@@ -290,26 +290,24 @@ async function fetchServerStatus() {
                     if (isAdmin() && startCompBtn) {
                         const openSlots = lobbyData.open_slots || 0;
                         const waitingCount = lobbyPlayers.filter(p => !p.in_slot).length;
-                        const autoStart = lobbyData.auto_start;
+                        const autoStart = lobbyData.auto_start; // "always", "admit_only", or "never"
                         const note = document.getElementById("startCompNote");
                         const compState = window.lastCompetitionData?.state || "waiting_for_players";
                         
                         if (compState === "waiting_for_players") {
                             startCompBtn.disabled = false;
                             
-                            if (autoStart) {
-                                // auto_start ON: players auto-admitted, button adds bots if needed
+                            if (autoStart === "always") {
+                                // "always": players auto-admitted and competition auto-starts
                                 if (openSlots === 0) {
-                                    // All slots filled — will auto-start momentarily
                                     startCompBtn.style.background = "#2ecc71";
                                     if (note) note.textContent = "All slots filled — game starting...";
                                 } else {
-                                    // Open slots remain — button adds bots to fill
                                     startCompBtn.style.background = "#3498db";
                                     if (note) note.textContent = "Bots will be added to the competition.";
                                 }
                             } else {
-                                // auto_start OFF: admin controls everything
+                                // "admit_only" or "never": admin must click Start
                                 if (openSlots === 0) {
                                     startCompBtn.style.background = "#2ecc71";
                                     if (note) note.textContent = "Click to start.";
