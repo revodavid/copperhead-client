@@ -106,6 +106,12 @@ function isAdmin() {
     return !!adminToken; 
 }
 
+// Lobby state tracking
+let inLobby = false;
+let lobbyPlayers = [];
+let lobbySlotAssignments = [];
+let serverLobbyMode = false;
+
 // Initialize server URL from URL parameter or default to localhost
 initializeServerUrl();
 
@@ -142,12 +148,6 @@ function initializeServerUrl() {
         serverUrlInput.value = "ws://localhost:8765/ws/";
     }
 }
-
-// Lobby state tracking
-let inLobby = false;
-let lobbyPlayers = [];
-let lobbySlotAssignments = [];
-let serverLobbyMode = false;
 
 function onServerUrlChange() {
     showLoadingState();
