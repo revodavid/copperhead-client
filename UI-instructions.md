@@ -59,8 +59,20 @@ Show round table with all matches in Round 1. All scores are listed as 0-0 in re
 
 *These buttons are only shown if the user is the server administrator*
 
-* "Start Competition" (green if no slots are open, orange if there are sufficient players in the lobby to full open slots, and blue otherwise) - starts the competition immediately, filling any open slots from the lobby and then (if necessary) with CopperBots of random difficulty. 
-* "[Checkbox] Automatically add players and start game". If checked, players are admitted from the lobby to the competition automatically as they join, and the competition starts as soon as enough players have joined to fill all slots in Round 1. If unchecked, the administrator must click "Start Competition" to admit players from the lobby and start the competition. Defaults according to server `lobby-mode` setting.
+* "Start Competition"
+  - If all slots are filled, this button is colored green and enabled. Clicking it starts the competition immediately.
+  - If some slots are open but enough players are in the lobby to fill them, this button is colored orange and enabled. Clicking it fills open slots with players from the lobby and starts the competition.
+  - If some slots are open and not enough players are in the lobby to fill them, this button is colored blue and enabled. Clicking it fills open slots with players from the lobby and bots of random difficulty, and starts the competition.
+
+Below the button, add this information according to context and the state of the auto_start server option:
+
+If auto_start is false:
+ * Green: Ready to start.
+ * Orange: Adds players from lobby and starts.
+ * Blue: Adds players from lobby and bots, and starts.
+
+If auto_start is true:
+ * Game will start immediately when all slots are filled.
 
 #### During Rounds
 

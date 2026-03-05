@@ -75,7 +75,6 @@ const inviteBtn = document.getElementById("inviteBtn");
 const adminPlayBtn = document.getElementById("adminPlayBtn");
 const adminPlayBotBtn = document.getElementById("adminPlayBotBtn");
 const startCompBtn = document.getElementById("startCompBtn");
-const startWhenFullChk = document.getElementById("startWhenFullChk");
 const lobbyPlayerList = document.getElementById("lobby-player-list");
 const copyServerUrlBtn = document.getElementById("copyServerUrlBtn");
 const copyToast = document.getElementById("copy-toast");
@@ -261,9 +260,9 @@ async function fetchServerStatus() {
                 updateFoodItemsDisplay();
             }
             
-            // Check for lobby mode
-            if (statusData.lobby_mode !== undefined) {
-                serverLobbyMode = statusData.lobby_mode;
+            // Check for lobby mode (auto_start: false means lobby is active)
+            if (statusData.auto_start !== undefined) {
+                serverLobbyMode = !statusData.auto_start;
             }
             
             updateEntryScreenStatus(statusData);
@@ -291,14 +290,6 @@ async function fetchServerStatus() {
                     lobbyPlayers = lobbyData.players || [];
                     lobbySlotAssignments = lobbyData.slot_assignments || [];
                     updateLobbyPanel();
-                    
-                    // Auto-start tournament if "Start when full" is checked and all slots filled
-                    const currentCompState = window.lastCompetitionData?.state || "waiting_for_players";
-                    if (isAdmin() && startWhenFullChk?.checked 
-                        && lobbyData.open_slots === 0 && lobbyData.filled_slots > 0
-                        && currentCompState === "waiting_for_players") {
-                        startTournament();
-                    }
                 }
             } catch (e) {
                 // Lobby endpoint might not exist on older servers

@@ -787,24 +787,6 @@ input[type="range"] {
     background: #2980b9;
 }
 
-.start-when-full {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85em;
-    color: #aaa;
-}
-
-.start-when-full input[type="checkbox"] {
-    width: auto;
-    margin: 0;
-}
-
-.start-when-full label {
-    margin: 0;
-    cursor: pointer;
-}
-
 /* Copy to clipboard toast */
 .copy-toast {
     position: fixed;
