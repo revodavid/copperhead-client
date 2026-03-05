@@ -296,6 +296,14 @@ async function fetchServerStatus() {
                     lobbyPlayers = lobbyData.players || [];
                     lobbySlotAssignments = lobbyData.slot_assignments || [];
                     updateLobbyPanel();
+                    
+                    // Auto-start tournament if "Start when full" is checked and all slots filled
+                    const currentCompState = window.lastCompetitionData?.state || "waiting_for_players";
+                    if (isAdmin() && startWhenFullChk?.checked 
+                        && lobbyData.open_slots === 0 && lobbyData.filled_slots > 0
+                        && currentCompState === "waiting_for_players") {
+                        startTournament();
+                    }
                 }
             } catch (e) {
                 // Lobby endpoint might not exist on older servers
@@ -639,12 +647,19 @@ async function addAiPlayer() {
                     const openSlots = lobbyData.open_slots || 0;
                     for (let i = 0; i < openSlots; i++) {
                         const randomDifficulty = Math.floor(Math.random() * 10) + 1;
-                        await fetch(httpUrl + `/lobby/add_bot?difficulty=${randomDifficulty}${adminParam}`, { method: "POST" });
+                        const resp = await fetch(httpUrl + `/lobby/add_bot?difficulty=${randomDifficulty}${adminParam}`, { method: "POST" });
+                        if (!resp.ok) break;
                     }
                 }
             } else {
                 const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
-                await fetch(httpUrl + `/lobby/add_bot?difficulty=${difficulty}${adminParam}`, { method: "POST" });
+                const resp = await fetch(httpUrl + `/lobby/add_bot?difficulty=${difficulty}${adminParam}`, { method: "POST" });
+                if (!resp.ok) {
+                    botsBeingAdded = false;
+                    addAiBtn.textContent = "Failed";
+                    setTimeout(() => { addAiBtn.textContent = "Add Bot"; addAiBtn.disabled = false; }, 1500);
+                    return;
+                }
             }
             
             botsBeingAdded = false;

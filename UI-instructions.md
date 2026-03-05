@@ -25,13 +25,13 @@ Looking for a server? Launch one in [GitHub CodeSpaces](https://github.com/revod
 
 * "Join Lobby" (green) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange)and allows the user to leave the lobby.
 
-* "Invite ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. A message "URL copied to clipboard!" appears briefly when the button is clicked.
+* "Invite Opponent ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. A message "URL copied to clipboard!" appears briefly when the button is clicked.
 
 Include this note: [Create your own bot to play against](https://github.com/revodavid/copperhead-bot).
 
-*If the user is the server administrator, also include these buttons:*
+*If the client is in Administrator, also include these buttons:*
 
-* "Play" (green) - adds the user directly to the competition, skipping the lobby. If the competition has already started, this button is disabled.
+* "Play" (green) - adds the user directly to the competition, skipping the lobby. If the competition has already started or no open slots exist, this button is disabled.
 
 * "Play Bot" (blue) - adds the user and a random difficulty CopperBot opponent to the single match in Round 1 for immediate play. This button is only shown in the special case of a competition with exactly one arena.
 
@@ -61,7 +61,7 @@ Show round table with all matches in Round 1. All scores are listed as 0-0 in re
 
 * "Add Bot" (blue) - adds a CopperBot opponent to the next open slot in the current round, if the round is not full. If the round is full, this button is disabled.
 * "Start Competition" (green if no slots are open, blue otherwise) - starts the competition immediately, filling any open slots from the lobby and then (if necessary) with CopperBots of random difficulty. 
-  * "[Checkbox] Start when full". If checked, the competition will automatically start as soon as all slots in the current round are filled by players from the lobby or added bots. If unchecked, the administrator must click "Start Competition" to begin the tournament once players have joined. Defaults according to server `lobby-mode` setting.
+* "[Checkbox] Automatically add players and start game". If checked, players are admitted from the lobby to the competition automatically as they join, and the competition starts as soon as enough players have joined to fill all slots in Round 1. If unchecked, the administrator must click "Start Competition" to admit players from the lobby and start the competition. Defaults according to server `lobby-mode` setting.
 
 #### During Rounds
 
