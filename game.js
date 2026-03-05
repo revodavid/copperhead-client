@@ -52,7 +52,7 @@ const playBtn = document.getElementById("playBtn");
 const playBotBtn = document.getElementById("playBotBtn");
 const playStatus = document.getElementById("play-status");
 const addAiBtn = document.getElementById("addAiBtn");
-const observeBtn = document.getElementById("observeBtn");
+const observeBtn = document.getElementById("observeBtn"); // May be null if observer card removed
 const competitionRoundInfo = document.getElementById("competition-round-info");
 const entryMatchesBody = document.getElementById("entry-matches-body");
 const statusDiv = document.getElementById("status");
@@ -377,17 +377,24 @@ function updateEntryScreenStatus(statusData) {
             // Add visual indicator for completed matches
             const rowClass = matchComplete ? 'match-complete-row' : '';
             
+            // Show Observe button for in-progress (non-complete) matches with players
+            const inProgress = !matchComplete && p1Connected && p2Connected;
+            const observeCell = inProgress 
+                ? `<td><button class="btn-observe-match" onclick="observeRoom('${room.room_id}')">Observe</button></td>`
+                : `<td></td>`;
+            
             rows.push(`<tr class="${rowClass}">
                 <td>${p1}</td>
                 <td class="score"><span ${s1Style}>${s1}</span> - <span ${s2Style}>${s2}</span></td>
                 <td>${p2}</td>
+                ${observeCell}
             </tr>`);
         }
         
         // Add Bye row if there's a bye player this round
         if (byePlayer && compState === "in_progress") {
             rows.push(`<tr class="bye-row">
-                <td colspan="3" style="text-align: center; color: #f39c12;">🎫 Bye: ${byePlayer}</td>
+                <td colspan="4" style="text-align: center; color: #f39c12;">🎫 Bye: ${byePlayer}</td>
             </tr>`);
         }
         
@@ -398,13 +405,14 @@ function updateEntryScreenStatus(statusData) {
                     <td>Waiting...</td>
                     <td class="score">--</td>
                     <td>Waiting...</td>
+                    <td></td>
                 </tr>`);
             }
         }
         
         // If no rows but competition is in progress, rooms may have been cleared between rounds
         if (rows.length === 0 && compState === "in_progress") {
-            rows.push(`<tr><td colspan="3" style="text-align: center;">Starting next round...</td></tr>`);
+            rows.push(`<tr><td colspan="4" style="text-align: center;">Starting next round...</td></tr>`);
         }
         
         // If no rows and waiting for players, show all empty slots
@@ -414,6 +422,7 @@ function updateEntryScreenStatus(statusData) {
                     <td>Waiting...</td>
                     <td class="score">--</td>
                     <td>Waiting...</td>
+                    <td></td>
                 </tr>`);
             }
         }
@@ -685,6 +694,22 @@ function observe() {
     setStatus("Connecting as observer...", "waiting");
     
     const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/observe";
+    connectWebSocket(wsUrl);
+}
+
+// Observe a specific room from the match table
+function observeRoom(roomId) {
+    const baseUrl = getServerUrl();
+    isObserver = true;
+    playerName = "Observer";
+
+    if (!baseUrl) return;
+
+    stopStatusPolling();
+    disableAllButtons();
+    setStatus("Connecting as observer...", "waiting");
+    
+    const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/observe?room=" + encodeURIComponent(roomId);
     connectWebSocket(wsUrl);
 }
 
@@ -1687,11 +1712,6 @@ function updateAdminButtonVisibility() {
         if (noteElement) noteElement.style.display = 'none';
     }
     
-    // Show observer card only when not in lobby mode
-    const observerCard = document.querySelector('.observer-card');
-    if (observerCard) {
-        observerCard.style.display = serverLobbyMode ? 'none' : 'block';
-    }
 }
 
 async function toggleLobby() {

@@ -82,16 +82,21 @@ h1 {
     .game-modes {
         grid-template-columns: 1fr;
     }
-    
-    .observer-card {
-        display: block;
-    }
 }
 
-.observer-card {
-    grid-column: 1 / -1; /* Span full width at bottom */
-    margin-top: 15px;
-    display: none; /* Hidden by default, shown by JS when not in lobby mode */
+/* Per-match Observe button in competition table */
+.btn-observe-match {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.btn-observe-match:hover {
+    background: #2980b9;
 }
 
 .mode-card {
@@ -206,13 +211,6 @@ h1 {
     border-color: #9b59b6;
 }
 
-#observeBtn {
-    background: #3498db;
-}
-
-#observeBtn:hover {
-    background: #2980b9;
-}
 
 .form-group {
     margin-bottom: 15px;
