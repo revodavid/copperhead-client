@@ -64,16 +64,15 @@ Show round table with all matches in Round 1. All scores are listed as 0-0 in re
   - If some slots are open but enough players are in the lobby to fill them, this button is colored orange and enabled. Clicking it fills open slots with players from the lobby and starts the competition.
   - If some slots are open and not enough players are in the lobby to fill them, this button is colored blue and enabled. Clicking it fills open slots with players from the lobby and bots of random difficulty, and starts the competition.
 
-Below the button, add this INFORMATIONAL NOTE according to context and the state of the auto_start server option:
+Below the button, add this INFORMATIONAL NOTE according to context and the state of the `auto_start` server option (`"always"`, `"admit_only"`, or `"never"`):
 
-If auto_start is false:
+If auto_start is `"admit_only"` or `"never"`:
  * Green: Click to start
- * Orange: Adds players from lobby and start
+ * Orange: Adds players from lobby and starts
  * Blue: Adds players from lobby and bots, and starts.
 
-If auto_start is true:
- * Green: [not relevant - auto_start is enabled]
- * Orange: [not relevant - auto_start is enabled]
+If auto_start is `"always"`:
+ * Green: All slots filled — game starting...
  * Blue: Bots will be added to the competition
  
 #### During Rounds
