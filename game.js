@@ -1731,7 +1731,7 @@ function updateLobbyPanel() {
             addBtn.textContent = 'Admit';
             addBtn.className = 'btn-add-to-slot';
             addBtn.onclick = () => lobbyAddToSlot(player.uid);
-            addBtn.disabled = player.in_slot;
+            addBtn.disabled = player.in_slot || (window.lastCompetitionData?.state || "") !== "waiting_for_players";
             
             const kickBtn = document.createElement('button');
             kickBtn.textContent = 'Kick';
