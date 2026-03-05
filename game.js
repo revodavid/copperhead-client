@@ -50,7 +50,6 @@ const playerNameInput = document.getElementById("playerName");
 const serverUrlInput = document.getElementById("serverUrl");
 const playBtn = document.getElementById("playBtn");
 const playBotBtn = document.getElementById("playBotBtn");
-const playStatus = document.getElementById("play-status");
 const addAiBtn = document.getElementById("addAiBtn");
 const observeBtn = document.getElementById("observeBtn"); // May be null if observer card removed
 const competitionRoundInfo = document.getElementById("competition-round-info");
@@ -211,10 +210,6 @@ function onServerUrlChange() {
 function showLoadingState() {
     if (playBtn) playBtn.disabled = true;
     if (addAiBtn) addAiBtn.disabled = true;
-    if (playStatus) {
-        playStatus.textContent = "Checking server...";
-        playStatus.style.color = "#888";
-    }
     if (competitionRoundInfo) competitionRoundInfo.textContent = "Loading...";
     if (entryMatchesBody) entryMatchesBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
 }
@@ -327,7 +322,6 @@ async function fetchServerStatus() {
         updateAdminButtonVisibility();
     } catch (e) {
         // Server not reachable
-        if (playStatus) playStatus.textContent = "Server unavailable";
         if (playBtn) playBtn.disabled = true;
         if (addAiBtn) addAiBtn.disabled = true;
         if (observeBtn) observeBtn.disabled = true;
@@ -352,19 +346,6 @@ function updateEntryScreenStatus(statusData) {
     // Update Play Bot button - enabled only for single-arena competition with open slots
     if (playBotBtn) {
         playBotBtn.disabled = !(arenas === 1 && openSlots === 2);
-    }
-    
-    if (playStatus) {
-        if (hasOpenMatches) {
-            playStatus.textContent = `${openSlots} slot${openSlots > 1 ? 's' : ''} available`;
-            playStatus.style.color = "#2ecc71";
-        } else if (hasAnyMatches) {
-            playStatus.textContent = "All slots filled";
-            playStatus.style.color = "#888";
-        } else {
-            playStatus.textContent = "Waiting for players";
-            playStatus.style.color = "#888";
-        }
     }
     
     // Update Add Bot button - enabled if there are open slots
