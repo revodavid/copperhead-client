@@ -48,8 +48,6 @@ const setupPanel = document.getElementById("setup");
 const gamePanel = document.getElementById("game");
 const playerNameInput = document.getElementById("playerName");
 const serverUrlInput = document.getElementById("serverUrl");
-const playBtn = document.getElementById("playBtn");
-const playBotBtn = document.getElementById("playBotBtn");
 const addAiBtn = document.getElementById("addAiBtn");
 const observeBtn = document.getElementById("observeBtn"); // May be null if observer card removed
 const competitionRoundInfo = document.getElementById("competition-round-info");
@@ -69,19 +67,15 @@ const originalInstructionsHtml = instructionsDiv ? instructionsDiv.innerHTML : "
 const serverUrlDisplay = document.getElementById("server-url-display");
 const serverVersion = document.getElementById("server-version");
 
-// New lobby mode elements
+// Lobby elements
 const joinLobbyBtn = document.getElementById("joinLobbyBtn");
 const inviteBtn = document.getElementById("inviteBtn");
-const adminPlayBtn = null; // Removed — admin uses Join Game like other players
-const adminPlayBotBtn = null; // Removed
 const startCompBtn = document.getElementById("startCompBtn");
 const lobbyPlayerList = document.getElementById("lobby-player-list");
 const copyServerUrlBtn = document.getElementById("copyServerUrlBtn");
 const copyToast = document.getElementById("copy-toast");
 
 // Event listeners
-playBtn?.addEventListener("click", connectWithMode);
-playBotBtn?.addEventListener("click", playAgainstBot);
 addAiBtn?.addEventListener("click", addAiPlayer);
 observeBtn?.addEventListener("click", observe);
 readyBtn?.addEventListener("click", sendReady);
@@ -89,7 +83,7 @@ document.addEventListener("keydown", handleKeydown);
 serverUrlInput.addEventListener("input", debounce(onServerUrlChange, 500));
 serverUrlInput.addEventListener("change", onServerUrlChange);
 
-// New lobby mode event listeners
+// Lobby event listeners
 joinLobbyBtn?.addEventListener("click", toggleLobby);
 inviteBtn?.addEventListener("click", copyInviteUrl);
 startCompBtn?.addEventListener("click", startTournament);
@@ -107,7 +101,6 @@ function isAdmin() {
 let inLobby = false;
 let lobbyPlayers = [];
 let lobbySlotAssignments = [];
-let serverLobbyMode = true;  // Lobby is always active
 
 // Initialize server URL from URL parameter or default to localhost
 initializeServerUrl();
@@ -205,7 +198,6 @@ function onServerUrlChange() {
 }
 
 function showLoadingState() {
-    if (playBtn) playBtn.disabled = true;
     if (addAiBtn) addAiBtn.disabled = true;
     if (competitionRoundInfo) competitionRoundInfo.textContent = "Loading...";
     if (entryMatchesBody) entryMatchesBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
@@ -274,9 +266,8 @@ async function fetchServerStatus() {
             updateCompetitionDisplay(compData);
         }
         
-        // Fetch lobby data if in lobby mode
-        if (serverLobbyMode) {
-            try {
+        // Fetch lobby data
+        try {
                 const lobbyResponse = await fetch(httpUrl + "/lobby");
                 if (lobbyResponse.ok) {
                     const lobbyData = await lobbyResponse.json();
@@ -304,7 +295,7 @@ async function fetchServerStatus() {
                                     if (note) note.textContent = "All slots filled — game starting...";
                                 } else {
                                     startCompBtn.style.background = "#3498db";
-                                    if (note) note.textContent = "Bots will be added to the competition.";
+                                    if (note) note.textContent = "Tournament starts automatically when filled. Click to add bots and start now.";
                                 }
                             } else {
                                 // "admit_only" or "never": admin must click Start
@@ -334,7 +325,6 @@ async function fetchServerStatus() {
             
             // Update admin button visibility
             updateAdminButtonVisibility();
-        }
         
         // Fetch championship history
         const historyResponse = await fetch(httpUrl + "/history");
@@ -345,11 +335,10 @@ async function fetchServerStatus() {
         
         updateServerSettingsDisplay(true);
         
-        // Update UI state after determining lobby mode
+        // Update UI state
         updateAdminButtonVisibility();
     } catch (e) {
         // Server not reachable
-        if (playBtn) playBtn.disabled = true;
         if (addAiBtn) addAiBtn.disabled = true;
         if (observeBtn) observeBtn.disabled = true;
         if (competitionRoundInfo) competitionRoundInfo.textContent = "--";
@@ -364,16 +353,6 @@ function updateEntryScreenStatus(statusData) {
     const arenas = statusData.arenas || 1;
     hasOpenMatches = openSlots > 0;
     const hasAnyMatches = rooms.length > 0;
-    
-    // Update Join button - only enabled if there's an open slot
-    if (playBtn) {
-        playBtn.disabled = !hasOpenMatches;
-    }
-    
-    // Update Play Bot button - enabled only for single-arena competition with open slots
-    if (playBotBtn) {
-        playBotBtn.disabled = !(arenas === 1 && openSlots === 2);
-    }
     
     // Update Add Bot button - enabled if there are open slots
     if (addAiBtn) {
@@ -392,11 +371,11 @@ function updateEntryScreenStatus(statusData) {
             if (!hasOpenMatches || (lastOpenSlots !== null && openSlots < lastOpenSlots)) {
                 botsBeingAdded = false;
                 addAiBtn.textContent = "Add Bot";
-                addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
+                addAiBtn.disabled = false;
             }
         } else {
-            // In lobby mode, always enabled (adds to lobby, not competition)
-            addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
+            // Always enabled (adds to lobby, not competition)
+            addAiBtn.disabled = false;
         }
         lastOpenSlots = openSlots;
     }
@@ -415,8 +394,8 @@ function updateEntryScreenStatus(statusData) {
         const byePlayer = window.lastCompetitionData?.bye_player;
         const pointsToWin = window.lastCompetitionData?.points_to_win || 5;
         
-        // In lobby mode while waiting, show slots from lobby data instead of room data
-        if (serverLobbyMode && compState === "waiting_for_players") {
+        // While waiting, show slots from lobby data instead of room data
+        if (compState === "waiting_for_players") {
             // Build match rows from lobby slot assignments
             // Each match needs 2 players; pair up slot assignments
             const maxPlayers = arenas * 2;
@@ -539,7 +518,7 @@ function updateCompetitionDisplay(compData) {
         const resetIn = compData.reset_in || 0;
         
         if (compData.state === "waiting_for_players") {
-            competitionRoundInfo.textContent = `Waiting for players to join... (${compData.players}/${compData.required})`;
+            competitionRoundInfo.textContent = '';
         } else if (compData.state === "complete") {
             if (compData.champion) {
                 if (resetIn > 0) {
@@ -553,28 +532,6 @@ function updateCompetitionDisplay(compData) {
         } else {
             competitionRoundInfo.textContent = `Round ${round} in Progress`;
         }
-    }
-    
-    // Update Join button text based on competition state
-    if (playBtn) {
-        if (compData.state === "complete") {
-            playBtn.textContent = "Competition in Progress";
-            playBtn.disabled = true;
-        } else if (compData.state === "in_progress" && !hasOpenMatches) {
-            playBtn.textContent = "Competition in Progress";
-            playBtn.disabled = true;
-        } else {
-            playBtn.textContent = "Join";
-            playBtn.disabled = !hasOpenMatches;
-        }
-    }
-    
-    // Update Play Bot button based on competition state
-    if (playBotBtn) {
-        if (compData.state === "complete" || compData.state === "in_progress") {
-            playBotBtn.disabled = true;
-        }
-        // Note: enabled state for waiting is handled in updateEntryScreenStatus
     }
 }
 
@@ -657,115 +614,39 @@ async function addAiPlayer() {
     
     try {
         const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const adminParam = adminToken ? `&admin_token=${adminToken}` : '';
         
-        // In lobby mode, use the lobby endpoint (requires admin token)
-        if (serverLobbyMode) {
-            const adminParam = adminToken ? `&admin_token=${adminToken}` : '';
-            
-            const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
-            const resp = await fetch(httpUrl + `/lobby/add_bot?difficulty=${difficulty}${adminParam}`, { method: "POST" });
-            if (!resp.ok) {
-                botsBeingAdded = false;
-                addAiBtn.textContent = "Failed";
-                setTimeout(() => { addAiBtn.textContent = "Add Bot"; addAiBtn.disabled = false; }, 1500);
-                return;
-            }
-            
-            // Bot spawns as a subprocess — keep "Adding..." state while it connects
-            setTimeout(async () => {
-                botsBeingAdded = false;
-                addAiBtn.textContent = "Add Bot";
-                addAiBtn.disabled = false;
-                await fetchServerStatus();
-            }, 2000);
+        const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
+        const resp = await fetch(httpUrl + `/lobby/add_bot?difficulty=${difficulty}${adminParam}`, { method: "POST" });
+        if (!resp.ok) {
+            botsBeingAdded = false;
+            addAiBtn.textContent = "Failed";
+            setTimeout(() => { addAiBtn.textContent = "Add Bot"; addAiBtn.disabled = false; }, 1500);
             return;
         }
         
-        // Add a single bot with specified or random difficulty
-        const difficulty = difficultyValue === "random" ? Math.floor(Math.random() * 10) + 1 : parseInt(difficultyValue);
-        const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
-        if (response.ok) {
-            // Let fetchServerStatus handle button state via botsBeingAdded flag
-            await fetchServerStatus();
-        } else {
+        // Bot spawns as a subprocess — keep "Adding..." state while it connects
+        setTimeout(async () => {
             botsBeingAdded = false;
-            addAiBtn.textContent = "Failed";
-            setTimeout(() => {
-                addAiBtn.textContent = "Add Bot";
-                addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
-            }, 1500);
-        }
+            addAiBtn.textContent = "Add Bot";
+            addAiBtn.disabled = false;
+            await fetchServerStatus();
+        }, 2000);
     } catch (e) {
         botsBeingAdded = false;
         addAiBtn.textContent = "Error";
         setTimeout(() => {
             addAiBtn.textContent = "Add Bot";
-            addAiBtn.disabled = serverLobbyMode ? false : !hasOpenMatches;
-        }, 1500);
-    }
-}
-
-// Play against a bot - first spawn a bot, then join as a player
-async function playAgainstBot() {
-    const baseUrl = getServerUrl();
-    if (!baseUrl) {
-        alert("Please enter a server URL");
-        return;
-    }
-    
-    // Show loading state on button
-    playBotBtn.disabled = true;
-    playBotBtn.textContent = "Starting...";
-    
-    try {
-        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
-        
-        // Spawn a bot with random difficulty
-        const difficulty = Math.floor(Math.random() * 10) + 1;
-        const response = await fetch(httpUrl + "/add_bot?difficulty=" + difficulty, { method: "POST" });
-        
-        if (!response.ok) {
-            playBotBtn.textContent = "Failed";
-            setTimeout(() => {
-                playBotBtn.textContent = "Play Bot";
-                fetchServerStatus();
-            }, 1500);
-            return;
-        }
-        
-        // Bot spawned, now join as a player
-        playBotBtn.textContent = "Play Bot";
-        connectWithMode();
-    } catch (e) {
-        playBotBtn.textContent = "Error";
-        setTimeout(() => {
-            playBotBtn.textContent = "Play Bot";
-            fetchServerStatus();
+            addAiBtn.disabled = false;
         }, 1500);
     }
 }
 
 function getServerUrl() {
-    return serverUrlInput.value.trim();
-}
-
-function connectWithMode() {
-    const baseUrl = getServerUrl();
-    playerName = playerNameInput.value.trim() || "Human";
-    isObserver = false;
-
-    if (!baseUrl) {
-        alert("Please enter a server URL");
-        return;
-    }
-
-    stopStatusPolling();
-    disableAllButtons();
-    setStatus("Connecting...", "waiting");
-    
-    // Use the new /join endpoint for auto-matchmaking
-    const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/join";
-    connectWebSocket(wsUrl);
+    const url = serverUrlInput.value.trim();
+    // Ensure trailing slash on /ws endpoint for consistent URL handling
+    if (url && url.match(/\/ws$/)) return url + '/';
+    return url;
 }
 
 function observe() {
@@ -803,7 +684,6 @@ function observeRoom(roomId) {
 }
 
 function disableAllButtons() {
-    if (playBtn) playBtn.disabled = true;
     if (addAiBtn) addAiBtn.disabled = true;
     if (observeBtn) observeBtn.disabled = true;
 }
@@ -824,12 +704,11 @@ function connectWebSocket(wsUrl) {
     }
 
     ws.onopen = () => {
-        if (serverLobbyMode && !isObserver) {
-            // In lobby mode for regular players, don't switch to game panel immediately
-            // Stay on setup panel until match_assigned
+        if (!isObserver) {
+            // Players stay on setup panel until match_assigned
             setStatus("Connected to lobby. Waiting for match assignment...", "waiting");
         } else {
-            // Normal behavior: switch to game panel
+            // Observers switch to game panel
             setupPanel.classList.add("hidden");
             gamePanel.classList.remove("hidden");
         }
@@ -837,18 +716,10 @@ function connectWebSocket(wsUrl) {
         if (isObserver) {
             readyBtn.classList.add("hidden");
             setStatus("Waiting for match to begin...", "waiting");
-            if (!serverLobbyMode) {
-                setupPanel.classList.add("hidden");
-                gamePanel.classList.remove("hidden");
-            }
         } else {
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Start Match";
             restorePlayerInstructions();
-            
-            if (!serverLobbyMode) {
-                setStatus("Connected! Click Ready to start.", "waiting");
-            }
         }
         
         // Send the ready message with player name
@@ -1145,8 +1016,8 @@ function handleMessage(data) {
             pointsToWin = data.points_to_win || 5;
             serverSettings.pointsToWin = pointsToWin;
             
-            // Switch to game panel if we were waiting in lobby mode
-            if (serverLobbyMode && setupPanel && !setupPanel.classList.contains("hidden")) {
+            // Switch to game panel if we were on setup panel
+            if (setupPanel && !setupPanel.classList.contains("hidden")) {
                 setupPanel.classList.add("hidden");
                 gamePanel.classList.remove("hidden");
                 restorePlayerInstructions();
@@ -1273,7 +1144,7 @@ function handleMessage(data) {
             }
             break;
             
-        // New lobby mode cases
+        // Lobby cases
         case "lobby_update":
             lobbyPlayers = data.players || [];
             lobbySlotAssignments = data.slot_assignments || [];
@@ -1705,15 +1576,26 @@ function updateLobbyPanel() {
     const list = document.getElementById('lobby-player-list');
     if (!list) return;
     
-    list.innerHTML = '';
-    
-    if (!serverLobbyMode) {
-        list.innerHTML = '<p>Lobby not available</p>';
-        return;
+    // Update lobby status message based on auto_start mode
+    const statusMsg = document.getElementById('lobbyStatusMsg');
+    if (statusMsg) {
+        const autoStart = window.lastLobbyData?.auto_start || "";
+        if (autoStart === "always" || autoStart === "admit_only") {
+            statusMsg.textContent = "New players automatically admitted to next competition";
+        } else if (autoStart === "never") {
+            if (lobbyPlayers.length === 0) {
+                statusMsg.textContent = "Waiting for players to join";
+            } else {
+                statusMsg.textContent = "Click 'Admit' to add players to competition";
+            }
+        } else {
+            statusMsg.textContent = "";
+        }
     }
     
+    list.innerHTML = '';
+    
     if (lobbyPlayers.length === 0) {
-        list.innerHTML = '<p>No players in lobby</p>';
         return;
     }
     
@@ -1744,15 +1626,6 @@ function updateLobbyPanel() {
         
         list.appendChild(item);
     });
-    
-    // Show a "Leave Lobby" button at the bottom of the panel when the player is in the lobby
-    if (inLobby) {
-        const leaveBtn = document.createElement('button');
-        leaveBtn.textContent = 'Leave Lobby';
-        leaveBtn.className = 'btn-leave-lobby-panel';
-        leaveBtn.onclick = () => toggleLobby();
-        list.appendChild(leaveBtn);
-    }
 }
 
 function updateLobbyButton() {
@@ -1774,49 +1647,25 @@ function updateLobbyButton() {
 }
 
 function updateAdminButtonVisibility() {
-    // Show/hide admin elements based on admin status AND lobby mode
-    const isAdminAndLobbyMode = isAdmin() && serverLobbyMode;
+    // Show/hide admin elements based on admin status
+    const isAdminUser = isAdmin();
     
     document.querySelectorAll('.admin-only').forEach(el => {
         // Use flex for ai-controls (button + dropdown side by side), block for others
         const displayValue = el.classList.contains('ai-controls') ? 'flex' : 'block';
-        el.style.display = isAdminAndLobbyMode ? displayValue : 'none';
+        el.style.display = isAdminUser ? displayValue : 'none';
     });
     
-    // Show/hide AI controls - now in lobby panel, always admin-only
-    // (handled by .admin-only selector above, no separate logic needed)
+    // Show player buttons
+    if (joinLobbyBtn) joinLobbyBtn.style.display = '';
+    if (inviteBtn) inviteBtn.style.display = '';
     
-    // Show/hide lobby vs non-lobby buttons
-    if (serverLobbyMode) {
-        // Hide original buttons, show lobby buttons
-        if (playBtn) playBtn.style.display = 'none';
-        if (playBotBtn) playBotBtn.style.display = 'none';
-        if (joinLobbyBtn) joinLobbyBtn.style.display = '';
-        if (inviteBtn) inviteBtn.style.display = '';
-        
-        // Show the note about creating bots
-        const noteElement = document.querySelector('.note');
-        if (noteElement) noteElement.style.display = '';
-    } else {
-        // Show original buttons, hide lobby buttons  
-        if (playBtn) playBtn.style.display = '';
-        if (playBotBtn) playBotBtn.style.display = '';
-        if (joinLobbyBtn) joinLobbyBtn.style.display = 'none';
-        if (inviteBtn) inviteBtn.style.display = 'none';
-        
-        // Hide the note about creating bots
-        const noteElement = document.querySelector('.note');
-        if (noteElement) noteElement.style.display = 'none';
-    }
-    
+    // Show the note about creating bots
+    const noteElement = document.querySelector('.note');
+    if (noteElement) noteElement.style.display = '';
 }
 
 async function toggleLobby() {
-    if (!serverLobbyMode) {
-        alert('Lobby mode is not enabled on this server.');
-        return;
-    }
-    
     if (inLobby) {
         // Leave lobby
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -1837,7 +1686,8 @@ function connectToLobby() {
     }
     
     // Connect to lobby-specific endpoint
-    const lobbyWsUrl = wsUrl.replace('/ws/', '/ws/join');
+    // Handle both /ws/ and /ws (no trailing slash)
+    const lobbyWsUrl = wsUrl.replace(/\/ws\/?$/, '/ws/join');
     
     if (ws) {
         ws.close();
@@ -1849,8 +1699,8 @@ function connectToLobby() {
     ws = new WebSocket(lobbyWsUrl);
     
     ws.onopen = () => {
-        // Send ready message to join lobby
-        const msg = { action: "ready", name: playerName };
+        // Send join message to enter the lobby
+        const msg = { action: "join", name: playerName };
         ws.send(JSON.stringify(msg));
     };
     
@@ -1948,11 +1798,11 @@ function copyInviteUrl() {
         return;
     }
     
-    // Create client URL with server parameter
-    const clientUrl = window.location.origin + window.location.pathname + '?server=' + encodeURIComponent(serverUrl);
+    // Create client URL with server parameter (minimal encoding for readability)
+    const clientUrl = window.location.origin + window.location.pathname + '?server=' + serverUrl;
     
     navigator.clipboard.writeText(clientUrl).then(() => {
-        showCopyToast();
+        showCopyToast('Ask your opponent to visit the URL just copied to the clipboard.');
     }).catch(() => {
         alert('Failed to copy to clipboard');
     });
@@ -1972,9 +1822,10 @@ function copyServerUrl() {
     });
 }
 
-function showCopyToast() {
+function showCopyToast(message) {
     if (!copyToast) return;
     
+    copyToast.textContent = message || 'URL copied to clipboard.';
     copyToast.classList.add('show');
     setTimeout(() => {
         copyToast.classList.remove('show');

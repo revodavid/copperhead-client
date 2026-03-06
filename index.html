@@ -31,11 +31,6 @@
                 <div class="mode-card">
                     <h3>🎮 Join the Competition</h3>
                     
-                    <!-- Original buttons for non-lobby mode -->
-                    <button id="playBtn" disabled>Join</button>
-                    <button id="playBotBtn" disabled>Play Bot</button>
-                    
-                    <!-- Lobby mode buttons -->
                     <button id="joinLobbyBtn">Join Game</button>
                     <button id="inviteBtn" class="btn-invite">Invite Opponent ⧉</button>
                     <p class="note">Create your own bot to play against: <a href="https://github.com/revodavid/copperhead-bot" target="_blank" rel="noopener">CopperHead Bot</a></p>
@@ -64,7 +59,8 @@
                 
                 <!-- Right column: Lobby -->
                 <div class="mode-card lobby-panel">
-                    <h3>🏆 Lobby</h3>
+                    <h3>👥 Lobby</h3>
+                    <p id="lobbyStatusMsg" class="lobby-status-msg"></p>
                     <div id="lobby-player-list">
                         <p>Loading lobby...</p>
                     </div>
@@ -149,7 +145,7 @@
     </div>
 
     <!-- Copy to clipboard toast -->
-    <div id="copy-toast" class="copy-toast">URL copied to clipboard!</div>
+    <div id="copy-toast" class="copy-toast">URL copied to clipboard.</div>
 
     <script src="sounds.js"></script>
     <script src="game.js"></script>

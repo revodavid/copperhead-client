@@ -136,13 +136,6 @@ h1 {
     width: 100%;
 }
 
-.mode-status {
-    font-size: 0.8em;
-    color: #888;
-    margin-top: 8px !important;
-    margin-bottom: 0 !important;
-}
-
 #competition-round-info {
     color: #f39c12;
     font-weight: bold;
@@ -157,23 +150,6 @@ h1 {
 
 #competition-matches .matches-table {
     font-size: 0.85em;
-}
-
-#playBtn {
-    background: #27ae60;
-}
-
-#playBtn:hover:not(:disabled) {
-    background: #1e8449;
-}
-
-#playBotBtn {
-    background: #3498db;
-    margin-top: 8px;
-}
-
-#playBotBtn:hover:not(:disabled) {
-    background: #2980b9;
 }
 
 #addAiBtn {
@@ -350,51 +326,6 @@ button:disabled {
     margin-right: 5px;
 }
 
-.legend-row {
-    display: flex;
-    align-items: center;
-    font-size: 13px;
-    margin-bottom: 5px;
-    color: #ccc;
-}
-
-.legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    margin-right: 8px;
-}
-
-.player1-color { background: #27ae60; }
-.player2-color { background: #c0392b; }
-.food-color { background: #f39c12; border-radius: 50%; }
-
-#difficultySection {
-    display: none;
-}
-
-#difficultySection.visible {
-    display: block;
-}
-
-.difficulty-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #ccc;
-}
-
-.difficulty-row input[type="range"] {
-    flex: 1;
-}
-
-#difficultyValue {
-    color: #f39c12;
-    font-weight: bold;
-    min-width: 20px;
-}
-
 input[type="range"] {
     width: 100%;
 }
@@ -436,23 +367,6 @@ input[type="range"] {
     background: #e74c3c;
 }
 
-.room-list {
-    font-size: 0.85em;
-    margin-top: 5px;
-}
-
-.room-list > div {
-    padding: 4px 8px;
-    margin: 2px 0;
-    background: #1a1a2e;
-    border-radius: 3px;
-}
-
-.room-list > div.current-room {
-    background: #0f3460;
-    border-left: 3px solid #f39c12;
-}
-
 #left-panel {
     display: flex;
     flex-direction: column;
@@ -479,15 +393,6 @@ input[type="range"] {
     margin: 0 0 15px 0;
     color: #aaa;
     font-size: 0.95em;
-}
-
-.settings-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 10px 20px;
-    font-size: 0.85em;
-    max-width: 500px;
-    margin: 0 auto;
 }
 
 .settings-grid-compact {
@@ -563,30 +468,14 @@ input[type="range"] {
     color: #888;
 }
 
-.server-url-display {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #333;
-}
-
-#server-url-text {
-    font-family: monospace;
-    font-size: 0.85em;
-    color: #888;
-    word-break: break-all;
-}
-
 .copy-btn {
     background: transparent;
     border: none;
     padding: 2px 4px;
     cursor: pointer;
     font-size: 0.75em;
-    opacity: 0.4;
+    color: inherit;
+    opacity: 0.6;
     transition: opacity 0.2s;
 }
 
@@ -597,12 +486,6 @@ input[type="range"] {
 .setting-label {
     color: #888;
     text-align: right;
-}
-
-.settings-grid span:nth-child(even) {
-    color: #f39c12;
-    text-align: left;
-    font-weight: bold;
 }
 
 /* Match info section */
@@ -791,6 +674,13 @@ input[type="range"] {
     font-size: 0.8em;
     color: #aaa;
     margin: 4px 0 0 0;
+    text-align: center;
+}
+
+.lobby-status-msg {
+    font-size: 0.8em;
+    color: #aaa;
+    margin: 0 0 8px 0;
     text-align: center;
 }
 

@@ -25,7 +25,7 @@ Looking for a server? Launch one in [GitHub CodeSpaces](https://github.com/revod
 
 * "Join Game" (green if one slot remains in an unstarted competition when auto_start is `"always"`; orange otherwise) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange) and allows the user to leave the lobby.
 
-* "Invite Opponent ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. The message "Send the URL in the clipboard to another player to join" appears briefly when the button is clicked.
+* "Invite Opponent ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. The message "Ask your opponent to visit the URL just copied to the clipboard." appears briefly when the button is clicked.
 
 Include this note: [Create your own bot to play against](https://github.com/revodavid/copperhead-bot).
 
@@ -63,11 +63,12 @@ Below the button, add this INFORMATIONAL NOTE according to context and the state
 If auto_start is `"admit_only"` or `"never"`:
  * Green: Click to start
  * Orange: Adds players from lobby and starts
- * Blue: Adds players from lobby and bots, and starts.
+ * Blue: Adds players from lobby and bots, and starts
 
 If auto_start is `"always"`:
  * Green: All slots filled — game starting...
- * Blue: Bots will be added to the competition
+ * Blue: Tournament starts
+  automatically when filled. Click to add bots and start now.
  
 #### During Rounds
 
@@ -95,13 +96,18 @@ Next competion begins in: [countdown timer]
 
 *This section of the UI shows the list of players (human and AI) waiting to join a competition.*
 
-Title: 🏆 Lobby
+Title: 👥 Lobby
+
+*Below the title, add a status message according to valut of auto_start:*
+
+* always, admit_only: "New players automatically admitted to next competition"
+* never, 0 players in lobby: "Waiting for players to join"
+* never, 1+ players in lobby: "Click 'Admit' to add players to  competition"
 
 #### Player View
 
 Show a list of players waiting in the lobby by name.
 
-If the player is in the lobby, add a "Leave Lobby" button that allows the player to leave the lobby.
 
 #### Administrator View
 
