@@ -2,9 +2,10 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
-## [4.0.1] - 2026-06-26
+## [4.0.1] - 2026-03-10
 
 ### Changed
+- Improved competition status messaging
 - Version bump to 4.0.1
 
 ## [4.0.0] - 2026-03-06
