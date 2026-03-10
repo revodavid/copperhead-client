@@ -520,12 +520,10 @@ function updateCompetitionDisplay(compData) {
         if (compData.state === "waiting_for_players") {
             competitionRoundInfo.textContent = '';
         } else if (compData.state === "complete") {
-            if (compData.champion) {
-                if (resetIn > 0) {
-                    competitionRoundInfo.textContent = `Winner: ${compData.champion}! New competition starting in ${resetIn} seconds...`;
-                } else {
-                    competitionRoundInfo.textContent = `🏆 Winner: ${compData.champion}!`;
-                }
+            if (resetIn > 0) {
+                competitionRoundInfo.textContent = `Next competition begins in: ${resetIn}s`;
+            } else if (compData.champion) {
+                competitionRoundInfo.textContent = `🏆 Winner: ${compData.champion}!`;
             } else {
                 competitionRoundInfo.textContent = `Competition Complete`;
             }
@@ -944,10 +942,19 @@ function handleMessage(data) {
             }
             updateScores();
             updateMatchInfo();
+            const endedByStalemate = data.end_reason === "stalemate";
             
             if (isObserver) {
                 const winnerName = data.winner ? (names[data.winner] || "Unknown") : "No one";
-                setStatus(`${winnerName} Wins the Game! Next game starting soon...`, "victory");
+                if (endedByStalemate) {
+                    if (data.winner === null) {
+                        setStatus("Stalemate! The game is a draw. Next game starting soon...", "waiting");
+                    } else {
+                        setStatus(`Stalemate! ${winnerName} wins by being longer. Next game starting soon...`, "victory");
+                    }
+                } else {
+                    setStatus(`${winnerName} Wins the Game! Next game starting soon...`, "victory");
+                }
                 
                 // Request updated room list periodically
                 const roomUpdateInterval = setInterval(() => {
@@ -966,15 +973,27 @@ function handleMessage(data) {
                 const oppWins = wins[opponentId] || 0;
                 let msg;
                 if (data.winner === null) {
-                    msg = `Draw! Score: ${myWins}-${oppWins} (first to ${pointsToWin})`;
+                    if (endedByStalemate) {
+                        msg = `Stalemate draw! Score: ${myWins}-${oppWins} (first to ${pointsToWin})`;
+                    } else {
+                        msg = `Draw! Score: ${myWins}-${oppWins} (first to ${pointsToWin})`;
+                    }
                     sfx.lose();
                     setStatus(msg, "waiting");
                 } else if (data.winner === playerId) {
-                    msg = `🏆 You Win! Score: ${myWins}-${oppWins}`;
+                    if (endedByStalemate) {
+                        msg = `🏆 Stalemate! You win by being longer. Score: ${myWins}-${oppWins}`;
+                    } else {
+                        msg = `🏆 You Win! Score: ${myWins}-${oppWins}`;
+                    }
                     sfx.win();
                     setStatus(msg, "victory");
                 } else {
-                    msg = `${opponentName} Wins - Score: ${myWins}-${oppWins}`;
+                    if (endedByStalemate) {
+                        msg = `Stalemate! ${opponentName} wins by being longer. Score: ${myWins}-${oppWins}`;
+                    } else {
+                        msg = `${opponentName} Wins - Score: ${myWins}-${oppWins}`;
+                    }
                     sfx.death();
                     setStatus(msg, "waiting");
                 }
@@ -1089,28 +1108,17 @@ function handleMessage(data) {
         case "competition_complete":
             const champion = data.champion?.name || "Unknown";
             const resetIn = data.reset_in || 10;
-            
-            if (isObserver) {
-                // Observer returns to entry screen after seeing champion
-                setStatus(`🏆 Competition Champion: ${champion}!`, "victory");
-                setTimeout(() => {
-                    returnToEntryScreen();
-                }, 3000);
-            } else {
-                setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${resetIn}s...`, "victory");
-                
-                // Start countdown display for players only
-                let countdown = resetIn;
-                const countdownInterval = setInterval(() => {
-                    countdown--;
-                    if (countdown > 0) {
-                        setStatus(`🏆 Competition Champion: ${champion}! Resetting in ${countdown}s...`, "victory");
-                    } else {
-                        clearInterval(countdownInterval);
-                        returnToEntryScreen();
-                    }
-                }, 1000);
-            }
+
+            // Show the winner screen on the entry panel during the full reset delay.
+            window.lastCompetitionData = {
+                ...(window.lastCompetitionData || {}),
+                state: "complete",
+                champion,
+                reset_in: resetIn
+            };
+            returnToEntryScreen();
+            updateCompetitionDisplay(window.lastCompetitionData);
+            fetchServerStatus();
             break;
             
         case "round_complete":
