@@ -1044,6 +1044,14 @@ function handleMessage(data) {
             pointsToWin = data.points_to_win || 5;
             serverSettings.pointsToWin = pointsToWin;
             
+            // Clear stale game state and render fresh playfield
+            gameState = data.game || null;
+            if (gameState && gameState.grid) {
+                serverSettings.gridWidth = gameState.grid.width;
+                serverSettings.gridHeight = gameState.grid.height;
+            }
+            updateCanvas();
+
             // Switch to game panel if we were on setup panel
             if (setupPanel && !setupPanel.classList.contains("hidden")) {
                 setupPanel.classList.add("hidden");
