@@ -735,7 +735,16 @@ function connectWebSocket(wsUrl) {
     };
 
     ws.onclose = (event) => {
-        if (event.code === 4003) {
+        if (event.code === 4008) {
+            // Player disqualified for not clicking "Start Round" in time
+            const match = event.reason && event.reason.match(/(\d+)s$/);
+            const timeLimit = match ? match[1] + "s" : "the time limit";
+            setStatus(`Disqualified: Failed to start game within ${timeLimit}`, "error");
+            readyBtn.textContent = "Return to Lobby";
+            readyBtn.classList.remove("hidden");
+            enableAllButtons();
+            return;
+        } else if (event.code === 4003) {
             setStatus("No active game to observe", "error");
         } else if (event.code === 4002) {
             setStatus("Server full - try again later", "error");
@@ -1718,7 +1727,17 @@ function connectToLobby() {
     };
     
     ws.onclose = (event) => {
-        if (event.code === 4003) {
+        if (event.code === 4008) {
+            // Player disqualified for not clicking "Start Round" in time
+            const match = event.reason && event.reason.match(/(\d+)s$/);
+            const timeLimit = match ? match[1] + "s" : "the time limit";
+            setStatus(`Disqualified: Failed to start game within ${timeLimit}`, "error");
+            readyBtn.textContent = "Return to Lobby";
+            readyBtn.classList.remove("hidden");
+            inLobby = false;
+            updateLobbyButton();
+            return;
+        } else if (event.code === 4003) {
             setStatus("Unable to join lobby", "error");
         } else {
             setStatus("Disconnected from lobby", "error");
