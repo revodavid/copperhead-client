@@ -521,11 +521,11 @@ function updateCompetitionDisplay(compData) {
             competitionRoundInfo.textContent = '';
         } else if (compData.state === "complete") {
             if (resetIn > 0) {
-                competitionRoundInfo.textContent = `Next competition begins in: ${resetIn}s`;
+                competitionRoundInfo.textContent = `Next tournament begins in: ${resetIn}s`;
             } else if (compData.champion) {
                 competitionRoundInfo.textContent = `🏆 Winner: ${compData.champion}!`;
             } else {
-                competitionRoundInfo.textContent = `Competition Complete`;
+                competitionRoundInfo.textContent = `Tournament Complete`;
             }
         } else {
             competitionRoundInfo.textContent = `Round ${round} in Progress`;
@@ -1032,7 +1032,7 @@ function handleMessage(data) {
             if (!isObserver && data.bye_player && data.bye_player === playerName) {
                 setStatus(`You have a bye this round. Waiting for next round to begin.`, "victory");
             } else {
-                setStatus(`Competition Round ${currentRound} of ${totalRounds}`, "waiting");
+                setStatus(`Tournament Round ${currentRound} of ${totalRounds}`, "waiting");
             }
             break;
             
@@ -1084,7 +1084,7 @@ function handleMessage(data) {
                 // Check if this is the final round
                 if (currentRound >= totalRounds) {
                     // Final round - show result then return to entry screen
-                    setStatus(`🏆 Competition Champion: ${matchWinnerName}!`, "victory");
+                    setStatus(`🏆 Tournament Champion: ${matchWinnerName}!`, "victory");
                     setTimeout(() => {
                         returnToEntryScreen();
                     }, 3000);
@@ -1151,8 +1151,8 @@ function handleMessage(data) {
             break;
             
         case "eliminated":
-            // Player was eliminated from competition
-            setStatus(`Eliminated from competition.`, "waiting");
+            // Player was eliminated from tournament
+            setStatus(`Eliminated from tournament.`, "waiting");
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Return to Lobby";
             break;
@@ -1162,7 +1162,7 @@ function handleMessage(data) {
             break;
             
         case "registered":
-            setStatus(`Registered as ${data.name}. Waiting for competition to start...`, "waiting");
+            setStatus(`Registered as ${data.name}. Waiting for tournament to start...`, "waiting");
             if (data.competition_status) {
                 serverSettings.pointsToWin = data.competition_status.points_to_win || 5;
                 updateServerSettingsDisplay();
@@ -1179,7 +1179,7 @@ function handleMessage(data) {
         case "lobby_joined":
             inLobby = true;
             updateLobbyButton();
-            setStatus("Joined lobby. Waiting for competition to start...", "waiting");
+            setStatus("Joined lobby. Waiting for tournament to start...", "waiting");
             break;
             
         case "lobby_left":
@@ -1606,12 +1606,12 @@ function updateLobbyPanel() {
     if (statusMsg) {
         const autoStart = window.lastLobbyData?.auto_start || "";
         if (autoStart === "always" || autoStart === "admit_only") {
-            statusMsg.textContent = "New players automatically admitted to next competition";
+            statusMsg.textContent = "New players automatically admitted to next tournament";
         } else if (autoStart === "never") {
             if (lobbyPlayers.length === 0) {
                 statusMsg.textContent = "Waiting for players to join";
             } else {
-                statusMsg.textContent = "Click 'Admit' to add players to competition";
+                statusMsg.textContent = "Click 'Admit' to add players to tournament";
             }
         } else {
             statusMsg.textContent = "";
