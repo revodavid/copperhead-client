@@ -1660,7 +1660,7 @@ function updateLobbyButton() {
         joinLobbyBtn.textContent = 'Leave Lobby';
         joinLobbyBtn.style.background = '#e67e22'; // Orange
     } else {
-        joinLobbyBtn.textContent = 'Join Game';
+        joinLobbyBtn.textContent = 'Join Lobby';
         // Green when exactly one slot remains in an unstarted competition with auto_start "always"
         // (joining will fill the last slot and auto-start the competition immediately)
         const compState = window.lastCompetitionData?.state || "";
