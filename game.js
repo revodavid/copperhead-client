@@ -649,6 +649,7 @@ function getServerUrl() {
 
 function observe() {
     const baseUrl = getServerUrl();
+    const wasInLobby = inLobby;
     isObserver = true;
     playerName = "Observer";
 
@@ -663,11 +664,17 @@ function observe() {
     
     const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/observe";
     connectWebSocket(wsUrl);
+    if (wasInLobby) {
+        inLobby = false;
+        updateLobbyButton();
+        showCopyToast("Removed from lobby");
+    }
 }
 
 // Observe a specific room from the match table
 function observeRoom(roomId) {
     const baseUrl = getServerUrl();
+    const wasInLobby = inLobby;
     isObserver = true;
     playerName = "Observer";
 
@@ -679,6 +686,11 @@ function observeRoom(roomId) {
     
     const wsUrl = baseUrl.replace(/\/ws\/?$/, "") + "/ws/observe?room=" + encodeURIComponent(roomId);
     connectWebSocket(wsUrl);
+    if (wasInLobby) {
+        inLobby = false;
+        updateLobbyButton();
+        showCopyToast("Removed from lobby");
+    }
 }
 
 function disableAllButtons() {
@@ -693,6 +705,11 @@ function enableAllButtons() {
 }
 
 function connectWebSocket(wsUrl) {
+    // Close any existing connection to prevent orphaned WebSockets
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
     try {
         ws = new WebSocket(wsUrl);
     } catch (e) {
@@ -797,7 +814,7 @@ function handleMessage(data) {
             const p1Name = names[1] || names["1"] || "Player 1";
             const p2Name = names[2] || names["2"] || "Player 2";
             if (gameState && gameState.running) {
-                setStatus(`Round ${currentRound || 1} Game in Progress`, "playing");
+                setStatus(`Game in progress: ${p1Name} vs ${p2Name}`, "playing");
             } else {
                 setStatus(`Waiting for match to begin...`, "waiting");
             }
@@ -842,7 +859,7 @@ function handleMessage(data) {
                     }
                     const p1 = winnerRoom.names?.[1] || "Player 1";
                     const p2 = winnerRoom.names?.[2] || "Player 2";
-                    setStatus(`Round ${currentRound} Game in Progress`, "playing");
+                    setStatus(`Game in progress: ${p1} vs ${p2}`, "playing");
                 } else if (!winnerRoom && activeRooms.length > 0) {
                     // Winner has a bye - switch to first active match
                     const byePlayerName = observerFollowingPlayer;
@@ -922,16 +939,19 @@ function handleMessage(data) {
             if (isObserver && gameState.running) {
                 const obsP1 = names[1] || names["1"] || "Player 1";
                 const obsP2 = names[2] || names["2"] || "Player 2";
-                setStatus(`Round ${currentRound || 1} Game in Progress`, "playing");
+                setStatus(`Game in progress: ${obsP1} vs ${obsP2}`, "playing");
             }
             break;
         case "start":
             if (isObserver) {
                 const startP1 = names[1] || names["1"] || "Player 1";
                 const startP2 = names[2] || names["2"] || "Player 2";
-                setStatus(`Round ${currentRound} Game in Progress`, "playing");
+                setStatus(`Game in progress: ${startP1} vs ${startP2}`, "playing");
             } else {
-                setStatus("Game started!", "playing");
+                const myName = names[playerId] || playerName;
+                const oppId = playerId === 1 ? 2 : 1;
+                const oppName = names[oppId] || "Opponent";
+                setStatus(`Game in progress: ${myName} vs ${oppName}`, "playing");
                 readyBtn.classList.add("hidden");
                 sfx.gameStart();
             }
@@ -957,12 +977,12 @@ function handleMessage(data) {
                 const winnerName = data.winner ? (names[data.winner] || "Unknown") : "No one";
                 if (endedByStalemate) {
                     if (data.winner === null) {
-                        setStatus("Stalemate! The game is a draw. Next game starting soon...", "waiting");
+                        setStatus("Game over (draw - stalemate). No points awarded. Waiting for next game to start", "waiting");
                     } else {
-                        setStatus(`Stalemate! ${winnerName} wins by being longer. Next game starting soon...`, "victory");
+                        setStatus(`Game over (stalemate). ${winnerName} wins by default. Waiting for next game to start`, "victory");
                     }
                 } else {
-                    setStatus(`${winnerName} Wins the Game! Next game starting soon...`, "victory");
+                    setStatus(`Game over. ${winnerName} wins the game. Waiting for next game to start`, "victory");
                 }
                 
                 // Request updated room list periodically
@@ -983,31 +1003,31 @@ function handleMessage(data) {
                 let msg;
                 if (data.winner === null) {
                     if (endedByStalemate) {
-                        msg = `Stalemate draw! Score: ${myWins}-${oppWins} (first to ${pointsToWin})`;
+                        msg = `Game over (draw - stalemate). Click "Ready" to start next game`;
                     } else {
-                        msg = `Draw! Score: ${myWins}-${oppWins} (first to ${pointsToWin})`;
+                        msg = `Game over (draw). Click "Ready" to start next game`;
                     }
                     sfx.lose();
                     setStatus(msg, "waiting");
                 } else if (data.winner === playerId) {
                     if (endedByStalemate) {
-                        msg = `🏆 Stalemate! You win by being longer. Score: ${myWins}-${oppWins}`;
+                        msg = `Game over (stalemate). You win by default. Click "Ready" to start next game`;
                     } else {
-                        msg = `🏆 You Win! Score: ${myWins}-${oppWins}`;
+                        msg = `Game over. You defeated ${opponentName}. Click "Ready" to start next game`;
                     }
                     sfx.win();
                     setStatus(msg, "victory");
                 } else {
                     if (endedByStalemate) {
-                        msg = `Stalemate! ${opponentName} wins by being longer. Score: ${myWins}-${oppWins}`;
+                        msg = `Game over (stalemate). ${opponentName} wins by default. Click "Ready" to start next game`;
                     } else {
-                        msg = `${opponentName} Wins - Score: ${myWins}-${oppWins}`;
+                        msg = `Game over. ${opponentName} wins. Click "Ready" to start next game`;
                     }
                     sfx.death();
                     setStatus(msg, "waiting");
                 }
                 readyBtn.classList.remove("hidden");
-                readyBtn.textContent = "Next Game";
+                readyBtn.textContent = "Ready";
             }
             break;
         case "waiting":
@@ -1030,9 +1050,9 @@ function handleMessage(data) {
             updateObserverInfo();
             // Show bye status if this player has a bye
             if (!isObserver && data.bye_player && data.bye_player === playerName) {
-                setStatus(`You have a bye this round. Waiting for next round to begin.`, "victory");
+                setStatus(`You have a bye this round. Waiting for next round to begin`, "victory");
             } else {
-                setStatus(`Tournament Round ${currentRound} of ${totalRounds}`, "waiting");
+                setStatus(`Round ${currentRound} of ${totalRounds}`, "waiting");
             }
             break;
             
@@ -1059,7 +1079,7 @@ function handleMessage(data) {
                 restorePlayerInstructions();
             }
             
-            setStatus(`Round begins. Click Start Round to begin.`, "waiting");
+            setStatus(`Round ${currentRound} ready. Click Start Round to begin`, "waiting");
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Start Round";
             updateMatchInfo();
@@ -1084,7 +1104,7 @@ function handleMessage(data) {
                 // Check if this is the final round
                 if (currentRound >= totalRounds) {
                     // Final round - show result then return to entry screen
-                    setStatus(`🏆 Tournament Champion: ${matchWinnerName}!`, "victory");
+                    setStatus(`🏆 Tournament complete. Champion: ${matchWinnerName}!`, "victory");
                     setTimeout(() => {
                         returnToEntryScreen();
                     }, 3000);
@@ -1094,26 +1114,25 @@ function handleMessage(data) {
                     observerMatchComplete = true;
                     
                     // Show victory status for match complete
-                    let matchMsg = `Round ${currentRound} Match Complete: ${matchWinnerName} Wins! Waiting for next round to begin...`;
+                    let matchMsg = `Match complete: ${matchWinnerName} advances! Waiting for other Round ${currentRound} matches to complete`;
                     setStatus(matchMsg, "victory");
                 }
             } else {
                 // Check if current player won or lost
                 wins = {1: 0, 2: 0};
                 if (matchWinnerId === playerId) {
-                    const roundNum = data.current_round || currentRound;
-                    setStatus(`🏆 Round ${roundNum} complete: You win!`, "victory");
+                    setStatus(`Match complete. You defeated ${loserName}!`, "victory");
                     sfx.win();
                     // After a delay, update status while waiting for next round
                     setTimeout(() => {
                         // Only update if status hasn't been changed by another message
                         if (!isObserver && matchWinnerId === playerId) {
-                            setStatus("Waiting for next round to begin...", "waiting");
+                            setStatus("Waiting for next round to begin", "waiting");
                         }
                     }, 3000);
                     // Winner stays on Play screen; server will send match_assigned for next round
                 } else {
-                    setStatus(`${matchWinnerName} wins the round!`, "waiting");
+                    setStatus(`Match complete. ${matchWinnerName} wins the round`, "waiting");
                     sfx.lose();
                     readyBtn.classList.remove("hidden");
                     readyBtn.textContent = "Return to Lobby";
@@ -1133,7 +1152,11 @@ function handleMessage(data) {
                 champion,
                 reset_in: resetIn
             };
-            returnToEntryScreen();
+            // Only return to entry screen if observing or actively playing.
+            // Lobby players stay connected so they can be matched in the next tournament.
+            if (isObserver || roomId) {
+                returnToEntryScreen();
+            }
             updateCompetitionDisplay(window.lastCompetitionData);
             fetchServerStatus();
             break;
@@ -1143,16 +1166,15 @@ function handleMessage(data) {
             const roundWinner = data.winner?.name || "Unknown";
             const nextRound = currentRound + 1;
             if (isObserver) {
-                setStatus(`Round ${currentRound} Complete: ${roundWinner} Advances to Round ${nextRound}! Next round starting soon...`, "victory");
+                setStatus(`Match complete: ${roundWinner} advances! Round ${nextRound} starting soon`, "victory");
             } else {
-                const nextRoundIn = data.next_round_in || 5;
-                setStatus(`Round ${currentRound} complete! ${roundWinner} advances. Next round in ${nextRoundIn}s...`, "victory");
+                setStatus(`Match complete. ${roundWinner} advances to next round, starting soon`, "victory");
             }
             break;
             
         case "eliminated":
             // Player was eliminated from tournament
-            setStatus(`Eliminated from tournament.`, "waiting");
+            setStatus(`Eliminated from tournament`, "waiting");
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Return to Lobby";
             break;
@@ -1211,7 +1233,7 @@ function sendReady() {
     if (ws && ws.readyState === WebSocket.OPEN) {
         const msg = { action: "ready", name: playerName };
         ws.send(JSON.stringify(msg));
-        setStatus("Waiting for game to start...", "waiting");
+        setStatus("Waiting for game to start", "waiting");
         readyBtn.classList.add("hidden");
         
         // Update goal text
