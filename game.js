@@ -29,6 +29,8 @@ let observerFollowingPlayer = null; // Track winner name to follow between round
 let observerMatchComplete = false; // Track if we're waiting for next round
 let botsBeingAdded = false; // Track if bots are in the process of being added
 let lastOpenSlots = null; // Track open slots to detect bot connections
+let countdownRemaining = 0;  // Tournament countdown seconds from server
+let countdownInterval = null; // Local interval for smooth countdown display
 let serverSettings = {
     gridWidth: 30,
     gridHeight: 20,
@@ -198,6 +200,7 @@ function onServerUrlChange() {
 }
 
 function showLoadingState() {
+    stopLocalCountdown();
     if (addAiBtn) addAiBtn.disabled = true;
     if (competitionRoundInfo) competitionRoundInfo.textContent = "Loading...";
     if (entryMatchesBody) entryMatchesBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
@@ -339,6 +342,7 @@ async function fetchServerStatus() {
         updateAdminButtonVisibility();
     } catch (e) {
         // Server not reachable
+        stopLocalCountdown();
         if (addAiBtn) addAiBtn.disabled = true;
         if (observeBtn) observeBtn.disabled = true;
         if (competitionRoundInfo) competitionRoundInfo.textContent = "--";
@@ -511,6 +515,52 @@ function updateEntryScreenStatus(statusData) {
     }
 }
 
+// Format seconds as mm:ss for countdown display.
+function formatCountdown(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// Update the tournament countdown text shown on the entry screen.
+function updateCountdownDisplay() {
+    if (competitionRoundInfo && countdownRemaining > 0) {
+        competitionRoundInfo.textContent = `Tournament starting in: ${formatCountdown(countdownRemaining)}`;
+    }
+}
+
+// Stop the local countdown interval and reset the stored timer value.
+function stopLocalCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    countdownRemaining = 0;
+}
+
+// Start or re-sync the local countdown timer between server updates.
+function startLocalCountdown(serverSeconds) {
+    countdownRemaining = serverSeconds;
+    updateCountdownDisplay();
+
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+
+    countdownInterval = setInterval(() => {
+        countdownRemaining -= 1;
+
+        if (countdownRemaining <= 0) {
+            stopLocalCountdown();
+            if (competitionRoundInfo) {
+                competitionRoundInfo.textContent = 'Tournament ready to start';
+            }
+        } else {
+            updateCountdownDisplay();
+        }
+    }, 1000);
+}
+
 function updateCompetitionDisplay(compData) {
     if (competitionRoundInfo) {
         const round = compData.round || 1;
@@ -518,8 +568,18 @@ function updateCompetitionDisplay(compData) {
         const resetIn = compData.reset_in || 0;
         
         if (compData.state === "waiting_for_players") {
-            competitionRoundInfo.textContent = '';
+            const serverCountdown = compData.countdown_remaining;
+            if (serverCountdown !== undefined && serverCountdown > 0) {
+                // Re-sync the local timer whenever the server sends an updated value.
+                startLocalCountdown(serverCountdown);
+            } else if (serverCountdown === 0) {
+                stopLocalCountdown();
+                competitionRoundInfo.textContent = 'Tournament ready to start';
+            } else if (!countdownInterval) {
+                competitionRoundInfo.textContent = '';
+            }
         } else if (compData.state === "complete") {
+            stopLocalCountdown();
             if (resetIn > 0) {
                 competitionRoundInfo.textContent = `Next tournament begins in: ${resetIn}s`;
             } else if (compData.champion) {
@@ -528,6 +588,7 @@ function updateCompetitionDisplay(compData) {
                 competitionRoundInfo.textContent = `Tournament Complete`;
             }
         } else {
+            stopLocalCountdown();
             competitionRoundInfo.textContent = `Round ${round} in Progress`;
         }
     }
@@ -1036,6 +1097,7 @@ function handleMessage(data) {
             
         // Competition mode messages
         case "competition_status":
+            stopLocalCountdown();  // Tournament has started, so the countdown is no longer needed.
             competitionState = data.state;
             currentRound = data.round || 0;
             totalRounds = data.total_rounds || 1;
@@ -1196,6 +1258,18 @@ function handleMessage(data) {
             lobbyPlayers = data.players || [];
             lobbySlotAssignments = data.slot_assignments || [];
             updateLobbyPanel();
+
+            // Lobby updates arrive more often than polling, so use them to keep the countdown smooth.
+            if (data.countdown_remaining !== undefined) {
+                if (data.countdown_remaining > 0) {
+                    startLocalCountdown(data.countdown_remaining);
+                } else if (data.countdown_remaining === 0) {
+                    stopLocalCountdown();
+                    if (competitionRoundInfo) {
+                        competitionRoundInfo.textContent = 'Tournament ready to start';
+                    }
+                }
+            }
             break;
             
         case "lobby_joined":
@@ -1248,6 +1322,7 @@ function sendReady() {
 }
 
 function returnToEntryScreen() {
+    stopLocalCountdown();
     if (ws) {
         ws.close();
         ws = null;
