@@ -1153,6 +1153,7 @@ function handleMessage(data) {
                 setupPanel.classList.add("hidden");
                 gamePanel.classList.remove("hidden");
                 restorePlayerInstructions();
+                updateFoodItemsDisplay();
             }
             
             setStatus(`Round ${currentRound} ready. Click Start Round to begin`, "waiting");
