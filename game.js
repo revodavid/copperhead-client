@@ -584,12 +584,27 @@ function updateCompetitionDisplay(compData) {
             }
         } else if (compData.state === "complete") {
             stopLocalCountdown();
-            if (resetIn > 0) {
-                competitionRoundInfo.textContent = `Next tournament begins in: ${resetIn}s`;
-            } else if (compData.champion) {
-                competitionRoundInfo.textContent = `🏆 Winner: ${compData.champion}!`;
+            // Show tournament results with champion's match history
+            if (compData.champion) {
+                competitionRoundInfo.innerHTML = `🏆 Tournament Results<br><span style="font-size: 1.1em;">Winner: ${compData.champion}!</span>`;
+                
+                // Show champion's match results in the match table
+                if (compData.champion_matches && compData.champion_matches.length > 0 && entryMatchesBody) {
+                    const rows = compData.champion_matches.map(m =>
+                        `<tr>
+                            <td style="text-align: right; color: #2ecc71; font-weight: bold;">${compData.champion}</td>
+                            <td class="score"><span style="color: #2ecc71; font-weight: bold;">${m.champion_score}</span> - <span style="color: #e67e22;">${m.opponent_score}</span></td>
+                            <td>${m.opponent}</td>
+                            <td style="color: #888; font-size: 0.8em;">R${m.round}</td>
+                        </tr>`
+                    );
+                    entryMatchesBody.innerHTML = rows.join("");
+                }
             } else {
                 competitionRoundInfo.textContent = `Tournament Complete`;
+            }
+            if (resetIn > 0) {
+                competitionRoundInfo.innerHTML += `<br><span style="font-size: 0.85em; color: #888;">Next tournament in: ${resetIn}s</span>`;
             }
         } else {
             stopLocalCountdown();
@@ -1221,13 +1236,15 @@ function handleMessage(data) {
         case "competition_complete":
             const champion = data.champion?.name || "Unknown";
             const resetIn = data.reset_in || 10;
+            const championMatches = data.champion_matches || [];
 
             // Show the winner screen on the entry panel during the full reset delay.
             window.lastCompetitionData = {
                 ...(window.lastCompetitionData || {}),
                 state: "complete",
                 champion,
-                reset_in: resetIn
+                reset_in: resetIn,
+                champion_matches: championMatches
             };
             // Only return to entry screen if observing or actively playing.
             // Lobby players stay connected so they can be matched in the next tournament.
