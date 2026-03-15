@@ -625,9 +625,10 @@ function updateServerSettingsDisplay(available = true) {
 
 function updateChampionshipHistory(championships) {
     const historySection = document.getElementById("championship-history");
-    const historyList = document.getElementById("history-list");
+    const recentWinnersList = document.getElementById("recent-winners-list");
+    const leaderboardList = document.getElementById("leaderboard-list");
     
-    if (!historySection || !historyList) return;
+    if (!historySection || !recentWinnersList || !leaderboardList) return;
     
     if (championships.length === 0) {
         historySection.classList.add("hidden");
@@ -636,17 +637,26 @@ function updateChampionshipHistory(championships) {
     
     historySection.classList.remove("hidden");
     
-    // Show most recent first, limit to 10
-    const recent = championships.slice(-10).reverse();
+    // Left pane: Recent Winners — last 5 champions by name only
+    const recentWinners = championships.slice(-5).reverse();
+    recentWinnersList.innerHTML = recentWinners.map(entry =>
+        `<div class="history-entry">${entry.champion}</div>`
+    ).join("");
     
-    historyList.innerHTML = recent.map((entry, index) => {
-        const date = new Date(entry.timestamp);
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return `<div class="history-entry">
-            <span class="champion-name">🏆 ${entry.champion}</span>
-            <span class="history-details">${entry.players} players • ${timeStr}</span>
-        </div>`;
-    }).join("");
+    // Right pane: Leaderboard — top 5 players by total wins
+    const winCounts = {};
+    for (const entry of championships) {
+        winCounts[entry.champion] = (winCounts[entry.champion] || 0) + 1;
+    }
+    const leaderboard = Object.entries(winCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    leaderboardList.innerHTML = leaderboard.map(([name, wins]) =>
+        `<div class="history-entry">
+            <span class="champion-name">${name}</span>
+            <span class="win-count">${wins}</span>
+        </div>`
+    ).join("");
 }
 
 function updateFoodItemsDisplay() {
