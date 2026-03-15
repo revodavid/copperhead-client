@@ -188,6 +188,10 @@ function initializeServerUrl() {
     
     if (serverParam) {
         serverUrlInput.value = serverParam;
+    } else if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        // Auto-detect WebSocket URL when hosted on a remote server (e.g. Azure)
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        serverUrlInput.value = `${wsProtocol}//${window.location.host}/ws/`;
     } else {
         // Default to localhost for local development
         serverUrlInput.value = "ws://localhost:8765/ws/";
