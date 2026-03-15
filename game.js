@@ -196,6 +196,12 @@ function initializeServerUrl() {
         // Default to localhost for local development
         serverUrlInput.value = "ws://localhost:8765/ws/";
     }
+    
+    // Check for 'name' URL parameter to pre-fill the player name
+    const nameParam = urlParams.get('name');
+    if (nameParam) {
+        playerNameInput.value = nameParam;
+    }
 }
 
 function onServerUrlChange() {
