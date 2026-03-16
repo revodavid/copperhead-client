@@ -2,6 +2,22 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [4.0.2] - 2026-03-16
+
+### Added
+- Tournament countdown display — shows "Tournament starting in: mm:ss" on lobby screen (issue #14)
+- Recent Winners and Leaderboard panes replace Tournament History (issue #18)
+- Tournament Results display with champion's round-by-round match scores (issue #19)
+- Match scores shown in Recent Winners pane (e.g. "CopperBot L6 (3-0, 3-1)")
+- Auto-detect WebSocket URL when client is hosted on the same server (Azure deployment)
+- `?name=` URL parameter to pre-fill player name
+- All URL parameters documented in README (`server`, `name`, `admin`)
+
+### Fixed
+- Fruit display not updating in How to Play pane on match assignment
+- Tournament results table flickering during reset delay
+- Pane title changes to "Tournament Results" during reset (no duplicate titles)
+
 ## [4.0.1] - 2026-03-10
 
 ### Changed
