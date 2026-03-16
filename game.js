@@ -400,11 +400,16 @@ function updateEntryScreenStatus(statusData) {
     }
     
     // Update matches table - show all matches in current round
+    // Skip when competition is complete — the results table is managed by updateCompetitionDisplay
     if (entryMatchesBody) {
+        const compState = window.lastCompetitionData?.state || "waiting_for_players";
+        
+        if (compState === "complete") {
+            // Don't overwrite the tournament results table
+        } else {
         let rows = [];
         
         // Check if we have competition data with bye info
-        const compState = window.lastCompetitionData?.state || "waiting_for_players";
         const byePlayer = window.lastCompetitionData?.bye_player;
         const pointsToWin = window.lastCompetitionData?.points_to_win || 5;
         
@@ -522,6 +527,7 @@ function updateEntryScreenStatus(statusData) {
         } // end else (standard mode / competition in progress)
         
         entryMatchesBody.innerHTML = rows.join("");
+        } // end if compState !== "complete"
     }
 }
 
