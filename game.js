@@ -29,6 +29,8 @@ let observerFollowingPlayer = null; // Track winner name to follow between round
 let observerMatchComplete = false; // Track if we're waiting for next round
 let botsBeingAdded = false; // Track if bots are in the process of being added
 let lastOpenSlots = null; // Track open slots to detect bot connections
+let countdownRemaining = 0;  // Tournament countdown seconds from server
+let countdownInterval = null; // Local interval for smooth countdown display
 let serverSettings = {
     gridWidth: 30,
     gridHeight: 20,
@@ -186,9 +188,19 @@ function initializeServerUrl() {
     
     if (serverParam) {
         serverUrlInput.value = serverParam;
+    } else if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        // Auto-detect WebSocket URL when hosted on a remote server (e.g. Azure)
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        serverUrlInput.value = `${wsProtocol}//${window.location.host}/ws/`;
     } else {
         // Default to localhost for local development
         serverUrlInput.value = "ws://localhost:8765/ws/";
+    }
+    
+    // Check for 'name' URL parameter to pre-fill the player name
+    const nameParam = urlParams.get('name');
+    if (nameParam) {
+        playerNameInput.value = nameParam;
     }
 }
 
@@ -198,6 +210,7 @@ function onServerUrlChange() {
 }
 
 function showLoadingState() {
+    stopLocalCountdown();
     if (addAiBtn) addAiBtn.disabled = true;
     if (competitionRoundInfo) competitionRoundInfo.textContent = "Loading...";
     if (entryMatchesBody) entryMatchesBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
@@ -339,6 +352,7 @@ async function fetchServerStatus() {
         updateAdminButtonVisibility();
     } catch (e) {
         // Server not reachable
+        stopLocalCountdown();
         if (addAiBtn) addAiBtn.disabled = true;
         if (observeBtn) observeBtn.disabled = true;
         if (competitionRoundInfo) competitionRoundInfo.textContent = "--";
@@ -386,11 +400,16 @@ function updateEntryScreenStatus(statusData) {
     }
     
     // Update matches table - show all matches in current round
+    // Skip when competition is complete — the results table is managed by updateCompetitionDisplay
     if (entryMatchesBody) {
+        const compState = window.lastCompetitionData?.state || "waiting_for_players";
+        
+        if (compState === "complete") {
+            // Don't overwrite the tournament results table
+        } else {
         let rows = [];
         
         // Check if we have competition data with bye info
-        const compState = window.lastCompetitionData?.state || "waiting_for_players";
         const byePlayer = window.lastCompetitionData?.bye_player;
         const pointsToWin = window.lastCompetitionData?.points_to_win || 5;
         
@@ -508,7 +527,54 @@ function updateEntryScreenStatus(statusData) {
         } // end else (standard mode / competition in progress)
         
         entryMatchesBody.innerHTML = rows.join("");
+        } // end if compState !== "complete"
     }
+}
+
+// Format seconds as mm:ss for countdown display.
+function formatCountdown(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// Update the tournament countdown text shown on the entry screen.
+function updateCountdownDisplay() {
+    if (competitionRoundInfo && countdownRemaining > 0) {
+        competitionRoundInfo.textContent = `Tournament starting in: ${formatCountdown(countdownRemaining)}`;
+    }
+}
+
+// Stop the local countdown interval and reset the stored timer value.
+function stopLocalCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    countdownRemaining = 0;
+}
+
+// Start or re-sync the local countdown timer between server updates.
+function startLocalCountdown(serverSeconds) {
+    countdownRemaining = serverSeconds;
+    updateCountdownDisplay();
+
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+
+    countdownInterval = setInterval(() => {
+        countdownRemaining -= 1;
+
+        if (countdownRemaining <= 0) {
+            stopLocalCountdown();
+            if (competitionRoundInfo) {
+                competitionRoundInfo.textContent = 'Tournament ready to start';
+            }
+        } else {
+            updateCountdownDisplay();
+        }
+    }, 1000);
 }
 
 function updateCompetitionDisplay(compData) {
@@ -516,18 +582,51 @@ function updateCompetitionDisplay(compData) {
         const round = compData.round || 1;
         const totalRounds = compData.total_rounds || 1;
         const resetIn = compData.reset_in || 0;
+        const titleEl = document.getElementById("competition-title");
+        
+        // Restore default title for non-complete states
+        if (compData.state !== "complete" && titleEl) {
+            titleEl.textContent = "🏆 Tournament Status";
+        }
         
         if (compData.state === "waiting_for_players") {
-            competitionRoundInfo.textContent = '';
+            const serverCountdown = compData.countdown_remaining;
+            if (serverCountdown !== undefined && serverCountdown > 0) {
+                // Re-sync the local timer whenever the server sends an updated value.
+                startLocalCountdown(serverCountdown);
+            } else if (serverCountdown === 0) {
+                stopLocalCountdown();
+                competitionRoundInfo.textContent = 'Tournament ready to start';
+            } else if (!countdownInterval) {
+                competitionRoundInfo.textContent = '';
+            }
         } else if (compData.state === "complete") {
-            if (resetIn > 0) {
-                competitionRoundInfo.textContent = `Next tournament begins in: ${resetIn}s`;
-            } else if (compData.champion) {
-                competitionRoundInfo.textContent = `🏆 Winner: ${compData.champion}!`;
+            stopLocalCountdown();
+            // Show tournament results with champion's match history
+            if (compData.champion) {
+                if (titleEl) titleEl.textContent = "🏆 Tournament Results";
+                competitionRoundInfo.innerHTML = `<span style="font-size: 1.1em;">Winner: ${compData.champion}!</span>`;
+                
+                // Show champion's match results in the match table
+                if (compData.champion_matches && compData.champion_matches.length > 0 && entryMatchesBody) {
+                    const rows = compData.champion_matches.map(m =>
+                        `<tr>
+                            <td style="text-align: right; color: #2ecc71; font-weight: bold;">${compData.champion}</td>
+                            <td class="score"><span style="color: #2ecc71; font-weight: bold;">${m.champion_score}</span> - <span style="color: #e67e22;">${m.opponent_score}</span></td>
+                            <td>${m.opponent}</td>
+                            <td style="color: #888; font-size: 0.8em;">R${m.round}</td>
+                        </tr>`
+                    );
+                    entryMatchesBody.innerHTML = rows.join("");
+                }
             } else {
                 competitionRoundInfo.textContent = `Tournament Complete`;
             }
+            if (resetIn > 0) {
+                competitionRoundInfo.innerHTML += `<br><span style="font-size: 0.85em; color: #888;">Next tournament in: ${resetIn}s</span>`;
+            }
         } else {
+            stopLocalCountdown();
             competitionRoundInfo.textContent = `Round ${round} in Progress`;
         }
     }
@@ -564,9 +663,10 @@ function updateServerSettingsDisplay(available = true) {
 
 function updateChampionshipHistory(championships) {
     const historySection = document.getElementById("championship-history");
-    const historyList = document.getElementById("history-list");
+    const recentWinnersList = document.getElementById("recent-winners-list");
+    const leaderboardList = document.getElementById("leaderboard-list");
     
-    if (!historySection || !historyList) return;
+    if (!historySection || !recentWinnersList || !leaderboardList) return;
     
     if (championships.length === 0) {
         historySection.classList.add("hidden");
@@ -575,17 +675,32 @@ function updateChampionshipHistory(championships) {
     
     historySection.classList.remove("hidden");
     
-    // Show most recent first, limit to 10
-    const recent = championships.slice(-10).reverse();
-    
-    historyList.innerHTML = recent.map((entry, index) => {
-        const date = new Date(entry.timestamp);
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return `<div class="history-entry">
-            <span class="champion-name">🏆 ${entry.champion}</span>
-            <span class="history-details">${entry.players} players • ${timeStr}</span>
-        </div>`;
+    // Left pane: Recent Winners — last 5 champions with round scores
+    const recentWinners = championships.slice(-5).reverse();
+    recentWinnersList.innerHTML = recentWinners.map(entry => {
+        let scoresStr = "";
+        if (entry.champion_matches && entry.champion_matches.length > 0) {
+            // Show scores in round order (earliest first)
+            const sorted = [...entry.champion_matches].reverse();
+            scoresStr = ` <span class="history-scores">(${sorted.map(m => `${m.champion_score}-${m.opponent_score}`).join(", ")})</span>`;
+        }
+        return `<div class="history-entry">${entry.champion}${scoresStr}</div>`;
     }).join("");
+    
+    // Right pane: Leaderboard — top 5 players by total wins
+    const winCounts = {};
+    for (const entry of championships) {
+        winCounts[entry.champion] = (winCounts[entry.champion] || 0) + 1;
+    }
+    const leaderboard = Object.entries(winCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    leaderboardList.innerHTML = leaderboard.map(([name, wins]) =>
+        `<div class="history-entry">
+            <span class="champion-name">${name}</span>
+            <span class="win-count">${wins}</span>
+        </div>`
+    ).join("");
 }
 
 function updateFoodItemsDisplay() {
@@ -1036,6 +1151,7 @@ function handleMessage(data) {
             
         // Competition mode messages
         case "competition_status":
+            stopLocalCountdown();  // Tournament has started, so the countdown is no longer needed.
             competitionState = data.state;
             currentRound = data.round || 0;
             totalRounds = data.total_rounds || 1;
@@ -1077,6 +1193,7 @@ function handleMessage(data) {
                 setupPanel.classList.add("hidden");
                 gamePanel.classList.remove("hidden");
                 restorePlayerInstructions();
+                updateFoodItemsDisplay();
             }
             
             setStatus(`Round ${currentRound} ready. Click Start Round to begin`, "waiting");
@@ -1144,13 +1261,15 @@ function handleMessage(data) {
         case "competition_complete":
             const champion = data.champion?.name || "Unknown";
             const resetIn = data.reset_in || 10;
+            const championMatches = data.champion_matches || [];
 
             // Show the winner screen on the entry panel during the full reset delay.
             window.lastCompetitionData = {
                 ...(window.lastCompetitionData || {}),
                 state: "complete",
                 champion,
-                reset_in: resetIn
+                reset_in: resetIn,
+                champion_matches: championMatches
             };
             // Only return to entry screen if observing or actively playing.
             // Lobby players stay connected so they can be matched in the next tournament.
@@ -1196,6 +1315,18 @@ function handleMessage(data) {
             lobbyPlayers = data.players || [];
             lobbySlotAssignments = data.slot_assignments || [];
             updateLobbyPanel();
+
+            // Lobby updates arrive more often than polling, so use them to keep the countdown smooth.
+            if (data.countdown_remaining !== undefined) {
+                if (data.countdown_remaining > 0) {
+                    startLocalCountdown(data.countdown_remaining);
+                } else if (data.countdown_remaining === 0) {
+                    stopLocalCountdown();
+                    if (competitionRoundInfo) {
+                        competitionRoundInfo.textContent = 'Tournament ready to start';
+                    }
+                }
+            }
             break;
             
         case "lobby_joined":
@@ -1248,6 +1379,7 @@ function sendReady() {
 }
 
 function returnToEntryScreen() {
+    stopLocalCountdown();
     if (ws) {
         ws.close();
         ws = null;

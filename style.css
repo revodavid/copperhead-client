@@ -426,37 +426,46 @@ input[type="range"] {
     text-decoration: underline;
 }
 
-/* Championship History section */
+/* Championship History section — two side-by-side panes */
 .championship-history {
     margin-top: 20px;
-    padding: 15px;
+}
+
+.history-panels {
+    display: flex;
+    gap: 10px;
+}
+
+.history-panel {
+    flex: 1;
+    padding: 12px;
     background: #0f0f23;
     border: 1px solid #333;
     border-radius: 8px;
     text-align: center;
 }
 
-.championship-history h4 {
-    margin: 0 0 10px 0;
+.history-panel h4 {
+    margin: 0 0 8px 0;
     color: #f1c40f;
     font-size: 0.95em;
 }
 
-#history-list {
+#recent-winners-list,
+#leaderboard-list {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    max-height: 150px;
-    overflow-y: auto;
+    gap: 4px;
 }
 
 .history-entry {
     display: flex;
     justify-content: space-between;
-    padding: 5px 10px;
+    padding: 4px 10px;
     background: #1a1a2e;
     border-radius: 4px;
     font-size: 0.85em;
+    color: #ccc;
 }
 
 .history-entry .champion-name {
@@ -464,8 +473,14 @@ input[type="range"] {
     font-weight: bold;
 }
 
-.history-entry .history-details {
+.history-entry .win-count {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.history-entry .history-scores {
     color: #888;
+    font-size: 0.9em;
 }
 
 .copy-btn {

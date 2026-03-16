@@ -139,9 +139,19 @@ If the server is not reachable, indicate this instead of displaying the settings
 
 Below, include this line in a subtle gray: To launch a new game server, see [CopperHead Server](https://github.com/revodavid/copperhead-server)
 
-### Championship History
+### Recent Winners and Leaderboard
 
-Below that, include a "🏆 Championship History" of previous tournament winners on this server.
+Below the Server settings section, show two side-by-side panes (hidden if no tournaments have been completed on this server):
+
+#### Left Pane: 🏆 Recent Winners
+
+Show the prior 5 tournament winners by name, starting with the most recent. Do not include number of players or times.
+
+#### Right Pane: 🏅 Leaderboard
+
+Two columns: Name and Wins.
+
+List the top 5 player names ranked by total number of tournament wins, starting with the most wins. Win counts are shown in green.
 
 ## Play Game screen
 
