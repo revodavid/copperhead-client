@@ -576,6 +576,12 @@ function updateCompetitionDisplay(compData) {
         const round = compData.round || 1;
         const totalRounds = compData.total_rounds || 1;
         const resetIn = compData.reset_in || 0;
+        const titleEl = document.getElementById("competition-title");
+        
+        // Restore default title for non-complete states
+        if (compData.state !== "complete" && titleEl) {
+            titleEl.textContent = "🏆 Tournament Status";
+        }
         
         if (compData.state === "waiting_for_players") {
             const serverCountdown = compData.countdown_remaining;
@@ -592,7 +598,8 @@ function updateCompetitionDisplay(compData) {
             stopLocalCountdown();
             // Show tournament results with champion's match history
             if (compData.champion) {
-                competitionRoundInfo.innerHTML = `🏆 Tournament Results<br><span style="font-size: 1.1em;">Winner: ${compData.champion}!</span>`;
+                if (titleEl) titleEl.textContent = "🏆 Tournament Results";
+                competitionRoundInfo.innerHTML = `<span style="font-size: 1.1em;">Winner: ${compData.champion}!</span>`;
                 
                 // Show champion's match results in the match table
                 if (compData.champion_matches && compData.champion_matches.length > 0 && entryMatchesBody) {
