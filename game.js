@@ -662,11 +662,17 @@ function updateChampionshipHistory(championships) {
     
     historySection.classList.remove("hidden");
     
-    // Left pane: Recent Winners — last 5 champions by name only
+    // Left pane: Recent Winners — last 5 champions with round scores
     const recentWinners = championships.slice(-5).reverse();
-    recentWinnersList.innerHTML = recentWinners.map(entry =>
-        `<div class="history-entry">${entry.champion}</div>`
-    ).join("");
+    recentWinnersList.innerHTML = recentWinners.map(entry => {
+        let scoresStr = "";
+        if (entry.champion_matches && entry.champion_matches.length > 0) {
+            // Show scores in round order (earliest first)
+            const sorted = [...entry.champion_matches].reverse();
+            scoresStr = ` <span class="history-scores">(${sorted.map(m => `${m.champion_score}-${m.opponent_score}`).join(", ")})</span>`;
+        }
+        return `<div class="history-entry">${entry.champion}${scoresStr}</div>`;
+    }).join("");
     
     // Right pane: Leaderboard — top 5 players by total wins
     const winCounts = {};

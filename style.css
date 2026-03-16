@@ -478,6 +478,11 @@ input[type="range"] {
     font-weight: bold;
 }
 
+.history-entry .history-scores {
+    color: #888;
+    font-size: 0.9em;
+}
+
 .copy-btn {
     background: transparent;
     border: none;
