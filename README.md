@@ -35,18 +35,24 @@ See [CopperHead Server](../copperhead-server/) repository
 
 ## URL Parameters
 
-The client supports the following URL parameter:
+The client supports the following URL parameters:
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `server` | Pre-fills the Server URL field | `?server=wss://my-codespace-8765.app.github.dev/ws/` |
+| `server` | WebSocket server URL | `?server=wss://my-server.example.com/ws/` |
+| `name` | Pre-fill the player name | `?name=David` |
+| `admin` | Admin token for administrator access | `?admin=abc123` |
 
-**Example:** To link directly to a Codespaces server:
+Parameters can be combined: `?server=wss://...&name=David&admin=token`
+
+**Auto-detection:** When the client is hosted on the same server (e.g. Azure deployment), the `server` parameter is optional — the client automatically connects to `wss://<current-host>/ws/`.
+
+**Example:** Connect to a Codespaces server with a custom name:
 ```
-https://revodavid.github.io/copperhead-client/?server=wss://my-codespace-8765.app.github.dev/ws/
+https://revodavid.github.io/copperhead-client/?server=wss://my-codespace-8765.app.github.dev/ws/&name=David
 ```
 
-When launching a server in Codespaces, the terminal will display a ready-to-use link with this parameter included.
+When launching a server in Codespaces, the terminal will display a ready-to-use link with the `server` parameter included.
 
 ## Controls
 
