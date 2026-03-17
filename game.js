@@ -500,9 +500,8 @@ function updateEntryScreenStatus(statusData) {
             // Add visual indicator for completed matches
             const rowClass = matchComplete ? 'match-complete-row' : '';
             
-            // Show Observe button only when room data is verified fresh
-            // (room exists in current /status response, not stale from a previous poll)
-            const observeCell = (inProgress && room.game_running)
+            // Show Observe button for in-progress (non-complete) matches with players
+            const observeCell = inProgress
                 ? `<td><button class="btn-observe-match" onclick="observeRoom('${room.room_id}')">Observe</button></td>`
                 : `<td></td>`;
             
@@ -793,6 +792,9 @@ function observe() {
     const wasInLobby = inLobby;
     isObserver = true;
     playerName = "Observer";
+    // Reset observer follow state so we don't auto-switch to a previous winner
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
 
     if (!baseUrl) {
         alert("Please enter a server URL");
@@ -818,6 +820,9 @@ function observeRoom(roomId) {
     const wasInLobby = inLobby;
     isObserver = true;
     playerName = "Observer";
+    // Reset observer follow state so we don't auto-switch to a previous winner
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
 
     if (!baseUrl) return;
 
