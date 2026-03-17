@@ -500,8 +500,9 @@ function updateEntryScreenStatus(statusData) {
             // Add visual indicator for completed matches
             const rowClass = matchComplete ? 'match-complete-row' : '';
             
-            // Show Observe button for in-progress (non-complete) matches with players
-            const observeCell = inProgress 
+            // Show Observe button only when room data is verified fresh
+            // (room exists in current /status response, not stale from a previous poll)
+            const observeCell = (inProgress && room.game_running)
                 ? `<td><button class="btn-observe-match" onclick="observeRoom('${room.room_id}')">Observe</button></td>`
                 : `<td></td>`;
             
@@ -1847,13 +1848,11 @@ function updateLobbyButton() {
         joinLobbyBtn.style.background = '#e67e22'; // Orange
     } else {
         joinLobbyBtn.textContent = 'Join Lobby';
-        // Green when exactly one slot remains in an unstarted competition with auto_start "always"
-        // (joining will fill the last slot and auto-start the competition immediately)
-        const compState = window.lastCompetitionData?.state || "";
-        const openSlots = window.lastLobbyData?.open_slots ?? 99;
-        const autoStart = window.lastLobbyData?.auto_start || "";
-        const isGreen = compState === "waiting_for_players" && openSlots === 1 && autoStart === "always";
-        joinLobbyBtn.style.background = isGreen ? '#27ae60' : '#e67e22'; // Green or orange
+        // Green when waiting for players (lobby accepts new players for next tournament)
+        // Orange when a tournament is active (players wait in lobby until it ends)
+        const compState = window.lastCompetitionData?.state || "waiting_for_players";
+        const isWaiting = compState === "waiting_for_players" || compState === "complete";
+        joinLobbyBtn.style.background = isWaiting ? '#27ae60' : '#e67e22';
     }
 }
 
