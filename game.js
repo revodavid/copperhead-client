@@ -1235,6 +1235,7 @@ function handleMessage(data) {
             setStatus(`Round ${currentRound} ready. Click Start Round to begin`, "waiting");
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Start Round";
+            sfx.roundReady();
             updateMatchInfo();
             updateScores();
             break;
