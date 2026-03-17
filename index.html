@@ -53,6 +53,10 @@
                     
                     <div class="admin-only competition-controls">
                         <button id="startCompBtn" class="btn-start-competition">Start Tournament</button>
+                        <div id="pauseControls" class="pause-controls hidden">
+                            <button id="resumeBtn" class="btn-resume">Resume Tournament</button>
+                            <button id="cancelBtn" class="btn-cancel">Cancel Tournament</button>
+                        </div>
                         <p id="startCompNote" class="start-comp-note"></p>
                     </div>
                 </div>
@@ -112,6 +116,7 @@
                         <div id="leaderboard-list"></div>
                     </div>
                 </div>
+                <button id="clearHistoryBtn" class="btn-clear-history admin-only">Clear</button>
             </div>
         </div>
 
