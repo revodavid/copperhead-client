@@ -88,7 +88,10 @@ serverUrlInput.addEventListener("change", onServerUrlChange);
 // Lobby event listeners
 joinLobbyBtn?.addEventListener("click", toggleLobby);
 inviteBtn?.addEventListener("click", copyInviteUrl);
-startCompBtn?.addEventListener("click", startTournament);
+startCompBtn?.addEventListener("click", handleCompetitionButton);
+document.getElementById("clearHistoryBtn")?.addEventListener("click", clearHistory);
+document.getElementById("resumeBtn")?.addEventListener("click", resumeTournament);
+document.getElementById("cancelBtn")?.addEventListener("click", cancelTournament);
 copyServerUrlBtn?.addEventListener("click", copyServerUrl);
 
 // Read admin token from URL parameter
@@ -296,10 +299,15 @@ async function fetchServerStatus() {
                         const waitingCount = lobbyPlayers.filter(p => !p.in_slot).length;
                         const autoStart = lobbyData.auto_start; // "always", "admit_only", or "never"
                         const note = document.getElementById("startCompNote");
+                        const pauseControls = document.getElementById("pauseControls");
                         const compState = window.lastCompetitionData?.state || "waiting_for_players";
                         
                         if (compState === "waiting_for_players") {
+                            // Waiting: show Start Tournament button
+                            startCompBtn.classList.remove("hidden");
+                            startCompBtn.textContent = "Start Tournament";
                             startCompBtn.disabled = false;
+                            if (pauseControls) pauseControls.classList.add("hidden");
                             
                             if (autoStart === "always") {
                                 // "always": players auto-admitted and competition auto-starts
@@ -323,10 +331,26 @@ async function fetchServerStatus() {
                                     if (note) note.textContent = "Adds players from lobby and bots, and starts.";
                                 }
                             }
+                        } else if (compState === "in_progress") {
+                            // Running: show Pause Tournament button
+                            startCompBtn.classList.remove("hidden");
+                            startCompBtn.textContent = "Pause Tournament";
+                            startCompBtn.style.background = "#e67e22";
+                            startCompBtn.disabled = false;
+                            if (pauseControls) pauseControls.classList.add("hidden");
+                            if (note) note.textContent = "";
+                        } else if (compState === "paused") {
+                            // Paused: hide main button, show Resume + Cancel
+                            startCompBtn.classList.add("hidden");
+                            if (pauseControls) pauseControls.classList.remove("hidden");
+                            if (note) note.textContent = "Tournament is paused.";
                         } else {
-                            // Competition already running
+                            // Complete or resetting
+                            startCompBtn.classList.remove("hidden");
+                            startCompBtn.textContent = "Start Tournament";
                             startCompBtn.style.background = "#555";
                             startCompBtn.disabled = true;
+                            if (pauseControls) pauseControls.classList.add("hidden");
                             if (note) note.textContent = "";
                         }
                     }
@@ -477,7 +501,7 @@ function updateEntryScreenStatus(statusData) {
             const rowClass = matchComplete ? 'match-complete-row' : '';
             
             // Show Observe button for in-progress (non-complete) matches with players
-            const observeCell = inProgress 
+            const observeCell = inProgress
                 ? `<td><button class="btn-observe-match" onclick="observeRoom('${room.room_id}')">Observe</button></td>`
                 : `<td></td>`;
             
@@ -687,9 +711,10 @@ function updateChampionshipHistory(championships) {
         return `<div class="history-entry">${entry.champion}${scoresStr}</div>`;
     }).join("");
     
-    // Right pane: Leaderboard — top 5 players by total wins
+    // Right pane: Leaderboard — top 5 players by total wins (excludes CopperBots)
     const winCounts = {};
     for (const entry of championships) {
+        if (entry.champion.startsWith("CopperBot")) continue;
         winCounts[entry.champion] = (winCounts[entry.champion] || 0) + 1;
     }
     const leaderboard = Object.entries(winCounts)
@@ -767,6 +792,9 @@ function observe() {
     const wasInLobby = inLobby;
     isObserver = true;
     playerName = "Observer";
+    // Reset observer follow state so we don't auto-switch to a previous winner
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
 
     if (!baseUrl) {
         alert("Please enter a server URL");
@@ -792,6 +820,9 @@ function observeRoom(roomId) {
     const wasInLobby = inLobby;
     isObserver = true;
     playerName = "Observer";
+    // Reset observer follow state so we don't auto-switch to a previous winner
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
 
     if (!baseUrl) return;
 
@@ -878,16 +909,15 @@ function connectWebSocket(wsUrl) {
             return;
         } else if (event.code === 4003) {
             setStatus("No active game to observe", "error");
+            returnToEntryScreen();
+            return;
         } else if (event.code === 4002) {
             setStatus("Server full - try again later", "error");
+            returnToEntryScreen();
+            return;
         } else if (isObserver) {
-            // For observers, try to reconnect after a brief delay
-            setStatus("Connection lost - reconnecting...", "error");
-            setTimeout(() => {
-                if (isObserver) {
-                    observe();
-                }
-            }, 2000);
+            // Observer disconnected — return to lobby
+            returnToEntryScreen();
             return;
         } else {
             setStatus("Disconnected", "error");
@@ -1180,6 +1210,12 @@ function handleMessage(data) {
             pointsToWin = data.points_to_win || 5;
             serverSettings.pointsToWin = pointsToWin;
             
+            // Reset scores and set player names for the new match
+            wins = {1: 0, 2: 0};
+            const opponentId = playerId === 1 ? 2 : 1;
+            names[playerId] = playerName;
+            names[opponentId] = data.opponent || "Opponent";
+
             // Clear stale game state and render fresh playfield
             gameState = data.game || null;
             if (gameState && gameState.grid) {
@@ -1199,7 +1235,9 @@ function handleMessage(data) {
             setStatus(`Round ${currentRound} ready. Click Start Round to begin`, "waiting");
             readyBtn.classList.remove("hidden");
             readyBtn.textContent = "Start Round";
+            sfx.roundReady();
             updateMatchInfo();
+            updateScores();
             break;
             
         case "match_complete":
@@ -1815,13 +1853,11 @@ function updateLobbyButton() {
         joinLobbyBtn.style.background = '#e67e22'; // Orange
     } else {
         joinLobbyBtn.textContent = 'Join Lobby';
-        // Green when exactly one slot remains in an unstarted competition with auto_start "always"
-        // (joining will fill the last slot and auto-start the competition immediately)
-        const compState = window.lastCompetitionData?.state || "";
-        const openSlots = window.lastLobbyData?.open_slots ?? 99;
-        const autoStart = window.lastLobbyData?.auto_start || "";
-        const isGreen = compState === "waiting_for_players" && openSlots === 1 && autoStart === "always";
-        joinLobbyBtn.style.background = isGreen ? '#27ae60' : '#e67e22'; // Green or orange
+        // Green when waiting for players (lobby accepts new players for next tournament)
+        // Orange when a tournament is active (players wait in lobby until it ends)
+        const compState = window.lastCompetitionData?.state || "waiting_for_players";
+        const isWaiting = compState === "waiting_for_players" || compState === "complete";
+        joinLobbyBtn.style.background = isWaiting ? '#27ae60' : '#e67e22';
     }
 }
 
@@ -1976,6 +2012,98 @@ async function startTournament() {
         // Server will handle starting the tournament
     } catch (e) {
         alert('Error starting tournament: ' + e.message);
+    }
+}
+
+async function handleCompetitionButton() {
+    // This button changes behavior based on competition state:
+    // "waiting_for_players" → Start Tournament
+    // "in_progress" → Pause Tournament
+    const compState = window.lastCompetitionData?.state || "waiting_for_players";
+    if (compState === "in_progress") {
+        await pauseTournament();
+    } else {
+        await startTournament();
+    }
+}
+
+async function pauseTournament() {
+    if (!isAdmin() || !adminToken) return;
+
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/pause_tournament?admin_token=${adminToken}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            alert('Failed to pause tournament');
+        }
+    } catch (e) {
+        alert('Error pausing tournament: ' + e.message);
+    }
+}
+
+async function resumeTournament() {
+    if (!isAdmin() || !adminToken) return;
+
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/resume_tournament?admin_token=${adminToken}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            alert('Failed to resume tournament');
+        }
+    } catch (e) {
+        alert('Error resuming tournament: ' + e.message);
+    }
+}
+
+async function cancelTournament() {
+    if (!isAdmin() || !adminToken) return;
+
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/cancel_tournament?admin_token=${adminToken}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            alert('Failed to cancel tournament');
+        }
+    } catch (e) {
+        alert('Error cancelling tournament: ' + e.message);
+    }
+}
+
+async function clearHistory() {
+    if (!isAdmin() || !adminToken) return;
+
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(`${httpUrl}/clear_history?admin_token=${adminToken}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            // Clear the display immediately
+            updateChampionshipHistory([]);
+        } else {
+            alert('Failed to clear history');
+        }
+    } catch (e) {
+        alert('Error clearing history: ' + e.message);
     }
 }
 

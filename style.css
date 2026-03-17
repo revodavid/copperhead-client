@@ -232,6 +232,14 @@ button:disabled {
     opacity: 0.5;
 }
 
+#joinLobbyBtn {
+    background: #27ae60;
+}
+
+#joinLobbyBtn:hover {
+    background: #219a52;
+}
+
 #status {
     font-size: 18px;
     margin-bottom: 15px;
@@ -483,6 +491,24 @@ input[type="range"] {
     font-size: 0.9em;
 }
 
+.btn-clear-history {
+    display: block;
+    margin: 10px auto 0;
+    padding: 4px 20px;
+    background: transparent;
+    color: #888;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.btn-clear-history:hover {
+    color: #e74c3c;
+    border-color: #e74c3c;
+}
+
 .copy-btn {
     background: transparent;
     border: none;
@@ -690,6 +716,30 @@ input[type="range"] {
     color: #aaa;
     margin: 4px 0 0 0;
     text-align: center;
+}
+
+.pause-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-resume {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-resume:hover {
+    background: #219a52;
+}
+
+.btn-cancel {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #c0392b;
 }
 
 .lobby-status-msg {
