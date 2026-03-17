@@ -909,16 +909,15 @@ function connectWebSocket(wsUrl) {
             return;
         } else if (event.code === 4003) {
             setStatus("No active game to observe", "error");
+            returnToEntryScreen();
+            return;
         } else if (event.code === 4002) {
             setStatus("Server full - try again later", "error");
+            returnToEntryScreen();
+            return;
         } else if (isObserver) {
-            // For observers, try to reconnect after a brief delay
-            setStatus("Connection lost - reconnecting...", "error");
-            setTimeout(() => {
-                if (isObserver) {
-                    observe();
-                }
-            }, 2000);
+            // Observer disconnected — return to lobby
+            returnToEntryScreen();
             return;
         } else {
             setStatus("Disconnected", "error");
