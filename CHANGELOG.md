@@ -2,6 +2,16 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [4.0.4] - 2026-03-18
+
+### Added
+- Download server settings link in the Server Settings section of the lobby page
+- Fetches settings from the server's `/settings` endpoint and downloads as `server-settings.json`
+
+### Changed
+- Combined server info links into a single line
+- Version bump to 4.0.4
+
 ## [4.0.2] - 2026-03-16
 
 ### Added
