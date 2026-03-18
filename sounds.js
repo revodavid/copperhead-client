@@ -92,6 +92,49 @@ class SoundFX {
         });
     }
 
+    // Round ready alert - cheerful tune to get the player's attention
+    roundReady() {
+        if (!this.enabled) return;
+        this.init();
+
+        // Bright ascending fanfare: G4, C5, E5, G5 (pause) G5, C6
+        const melody = [
+            { freq: 392, dur: 0.12 },  // G4
+            { freq: 523, dur: 0.12 },  // C5
+            { freq: 659, dur: 0.12 },  // E5
+            { freq: 784, dur: 0.18 },  // G5 (held slightly longer)
+            { freq: 0,   dur: 0.08 },  // brief pause
+            { freq: 784, dur: 0.1  },  // G5
+            { freq: 1047, dur: 0.35 }, // C6 (long finish)
+        ];
+
+        let time = this.audioCtx.currentTime;
+
+        melody.forEach((note) => {
+            if (note.freq === 0) {
+                time += note.dur;
+                return;
+            }
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+
+            osc.type = 'triangle';
+            osc.frequency.value = note.freq;
+
+            gain.gain.setValueAtTime(0.2, time);
+            gain.gain.setValueAtTime(0.2, time + note.dur - 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + note.dur);
+
+            osc.start(time);
+            osc.stop(time + note.dur);
+
+            time += note.dur;
+        });
+    }
+
     // Death sound- descending wah-wah
     death() {
         if (!this.enabled) return;

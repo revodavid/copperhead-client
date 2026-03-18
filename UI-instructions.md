@@ -23,7 +23,7 @@ Looking for a server? Launch one in [GitHub CodeSpaces](https://github.com/revod
 
 *This buttons section of the UI is designed to make it easy for the human user of the client to jump in and play a game against a human or bot oppponent*
 
-* "Join Game" (green if one slot remains in an unstarted competition when auto_start is `"always"`; orange otherwise) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange) and allows the user to leave the lobby.
+* "Join Lobby" (green if one slot remains in an unstarted tournament when auto_start is `"always"`; orange otherwise) - adds the user to the lobby. If the user is already in the lobby, this button changes to "Leave Lobby" (orange) and allows the user to leave the lobby.
 
 * "Invite Opponent ⧉" (orange) - copies the URL of this client to the clipboard, so the user can share it with a friend to invite them to play on the same server. The message "Ask your opponent to visit the URL just copied to the clipboard." appears briefly when the button is clicked.
 
@@ -139,9 +139,19 @@ If the server is not reachable, indicate this instead of displaying the settings
 
 Below, include this line in a subtle gray: To launch a new game server, see [CopperHead Server](https://github.com/revodavid/copperhead-server)
 
-### Championship History
+### Recent Winners and Leaderboard
 
-Below that, include a "🏆 Championship History" of previous tournament winners on this server.
+Below the Server settings section, show two side-by-side panes (hidden if no tournaments have been completed on this server):
+
+#### Left Pane: 🏆 Recent Winners
+
+Show the prior 5 tournament winners by name, starting with the most recent. Do not include number of players or times.
+
+#### Right Pane: 🏅 Leaderboard
+
+Two columns: Name and Wins.
+
+List the top 5 player names ranked by total number of tournament wins, starting with the most wins. Win counts are shown in green.
 
 ## Play Game screen
 
