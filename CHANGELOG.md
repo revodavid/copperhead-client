@@ -2,6 +2,12 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [4.0.5] - 2026-03-18
+
+### Changed
+- CopperHead Bot link now points to Hack Tournament guide
+- Version bump to 4.0.5
+
 ## [4.0.4] - 2026-03-18
 
 ### Added

@@ -1845,8 +1845,10 @@ function updateLobbyPanel() {
         } else if (autoStart === "never") {
             if (lobbyPlayers.length === 0) {
                 statusMsg.textContent = "Waiting for players to join";
-            } else {
+            } else if (isAdmin()) {
                 statusMsg.textContent = "Click 'Admit' to add players to tournament";
+            } else {
+                statusMsg.textContent = "Waiting for admin to start tournament";
             }
         } else {
             statusMsg.textContent = "";
