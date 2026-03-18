@@ -74,6 +74,7 @@ const startCompBtn = document.getElementById("startCompBtn");
 const lobbyPlayerList = document.getElementById("lobby-player-list");
 const copyServerUrlBtn = document.getElementById("copyServerUrlBtn");
 const copyToast = document.getElementById("copy-toast");
+const downloadSettingsBtn = document.getElementById("downloadSettingsBtn");
 
 // Event listeners
 addAiBtn?.addEventListener("click", addAiPlayer);
@@ -88,6 +89,7 @@ joinLobbyBtn?.addEventListener("click", toggleLobby);
 inviteBtn?.addEventListener("click", copyInviteUrl);
 startCompBtn?.addEventListener("click", startTournament);
 copyServerUrlBtn?.addEventListener("click", copyServerUrl);
+downloadSettingsBtn?.addEventListener("click", downloadServerSettings);
 
 // Read admin token from URL parameter
 const adminToken = new URLSearchParams(window.location.search).get('admin');
@@ -539,6 +541,7 @@ function updateServerSettingsDisplay(available = true) {
     const pointsEl = document.getElementById("setting-points");
     const contentEl = document.getElementById("server-settings-content");
     const unavailableEl = document.getElementById("server-unavailable");
+    const downloadLink = document.getElementById("download-settings-link");
     
     // Update server URL and version in header
     const wsUrl = getServerUrl();
@@ -552,13 +555,53 @@ function updateServerSettingsDisplay(available = true) {
     if (available) {
         if (contentEl) contentEl.classList.remove("hidden");
         if (unavailableEl) unavailableEl.classList.add("hidden");
+        if (downloadLink) downloadLink.classList.remove("hidden");
         if (gridEl) gridEl.textContent = `${serverSettings.gridWidth}x${serverSettings.gridHeight}`;
         if (speedEl) speedEl.textContent = `${serverSettings.speed}s`;
         if (pointsEl) pointsEl.textContent = serverSettings.pointsToWin;
     } else {
         if (contentEl) contentEl.classList.add("hidden");
         if (unavailableEl) unavailableEl.classList.remove("hidden");
+        if (downloadLink) downloadLink.classList.add("hidden");
         if (serverVersion) serverVersion.textContent = "";
+    }
+}
+
+/**
+ * Download the current server settings as a JSON file.
+ * Fetches the settings from the server's /settings endpoint and triggers
+ * a browser download. The admin_token is removed if present.
+ */
+async function downloadServerSettings(e) {
+    if (e) e.preventDefault();
+    const baseUrl = getServerUrl();
+    if (!baseUrl) return;
+
+    try {
+        const httpUrl = baseUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+        const response = await fetch(httpUrl + "/settings");
+        if (!response.ok) {
+            console.error("Failed to fetch server settings:", response.status);
+            return;
+        }
+        const settings = await response.json();
+
+        // Remove admin_token if present (defense-in-depth)
+        delete settings.admin_token;
+
+        // Trigger browser download as server-settings.json
+        const json = JSON.stringify(settings, null, 4);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "server-settings.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error("Error downloading server settings:", err);
     }
 }
 
