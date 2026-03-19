@@ -894,8 +894,12 @@ function enableAllButtons() {
 }
 
 function connectWebSocket(wsUrl) {
-    // Close any existing connection to prevent orphaned WebSockets
+    // Close any existing connection to prevent orphaned WebSockets.
+    // Clear handlers first so the old onclose doesn't fire and reset the UI.
     if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.onmessage = null;
         ws.close();
         ws = null;
     }
