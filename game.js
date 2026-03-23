@@ -894,8 +894,12 @@ function enableAllButtons() {
 }
 
 function connectWebSocket(wsUrl) {
-    // Close any existing connection to prevent orphaned WebSockets
+    // Close any existing connection to prevent orphaned WebSockets.
+    // Clear handlers first so the old onclose doesn't fire and reset the UI.
     if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.onmessage = null;
         ws.close();
         ws = null;
     }
@@ -1845,8 +1849,10 @@ function updateLobbyPanel() {
         } else if (autoStart === "never") {
             if (lobbyPlayers.length === 0) {
                 statusMsg.textContent = "Waiting for players to join";
-            } else {
+            } else if (isAdmin()) {
                 statusMsg.textContent = "Click 'Admit' to add players to tournament";
+            } else {
+                statusMsg.textContent = "Waiting for admin to start tournament";
             }
         } else {
             statusMsg.textContent = "";
