@@ -756,12 +756,16 @@ function updateChampionshipHistory(championships) {
     
     // Right pane: Leaderboard — top 5 players by total wins (excludes CopperBots)
     const winCounts = {};
-    for (const entry of championships) {
+    const lastWinIndex = {};  // track recency for tiebreaking
+    for (let i = 0; i < championships.length; i++) {
+        const entry = championships[i];
         if (entry.champion.startsWith("CopperBot")) continue;
         winCounts[entry.champion] = (winCounts[entry.champion] || 0) + 1;
+        lastWinIndex[entry.champion] = i;  // later index = more recent
     }
+    // Sort by win count (descending), then by recency (most recent first)
     const leaderboard = Object.entries(winCounts)
-        .sort((a, b) => b[1] - a[1])
+        .sort((a, b) => b[1] - a[1] || lastWinIndex[b[0]] - lastWinIndex[a[0]])
         .slice(0, 5);
     leaderboardList.innerHTML = leaderboard.map(([name, wins]) =>
         `<div class="history-entry">
