@@ -2,6 +2,11 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
+## [4.0.7] - 2026-04-02
+
+### Changed
+- Version bump to 4.0.7
+
 ## [4.0.6] - 2026-03-23
 
 ### Changed
