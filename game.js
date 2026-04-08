@@ -1042,6 +1042,10 @@ function handleMessage(data) {
             
             // If we were following a winner and this is a new round, find their room
             if (observerFollowingPlayer && observerMatchComplete) {
+                if (activeRooms.length === 0) {
+                    // No rooms yet — tournament is paused between rounds
+                    setStatus(`Match complete: ${observerFollowingPlayer} advances! Waiting for next round to be started`, "victory");
+                } else {
                 const winnerRoom = activeRooms.find(r => 
                     r.names && (r.names[1] === observerFollowingPlayer || r.names[2] === observerFollowingPlayer)
                 );
@@ -1070,6 +1074,7 @@ function handleMessage(data) {
                     const p1 = firstRoom.names?.[1] || "Player 1";
                     const p2 = firstRoom.names?.[2] || "Player 2";
                     setStatus(`${byePlayerName} has a Bye. Watching: ${p1} vs ${p2}`, "playing");
+                }
                 }
             } else {
                 currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
@@ -1248,6 +1253,8 @@ function handleMessage(data) {
             // Show bye status if this player has a bye
             if (!isObserver && data.bye_player && data.bye_player === playerName) {
                 setStatus(`You have a bye this round. Waiting for next round to begin`, "victory");
+            } else if (data.state === "paused") {
+                setStatus(`Tournament paused. Waiting for next round to be started`, "waiting");
             } else {
                 setStatus(`Round ${currentRound} of ${totalRounds}`, "waiting");
             }
