@@ -651,6 +651,9 @@ function updateCompetitionDisplay(compData) {
             if (resetIn > 0) {
                 competitionRoundInfo.innerHTML += `<br><span style="font-size: 0.85em; color: #888;">Next tournament in: ${resetIn}s</span>`;
             }
+        } else if (compData.state === "paused") {
+            stopLocalCountdown();
+            competitionRoundInfo.textContent = `Round ${round} Ready to Start`;
         } else {
             stopLocalCountdown();
             competitionRoundInfo.textContent = `Round ${round} in Progress`;
