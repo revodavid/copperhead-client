@@ -516,7 +516,7 @@ function updateEntryScreenStatus(statusData) {
         }
         
         // Add Bye row if there's a bye player this round
-        if (byePlayer && compState === "in_progress") {
+        if (byePlayer && (compState === "in_progress" || compState === "paused")) {
             rows.push(`<tr class="bye-row">
                 <td colspan="4" style="text-align: center; color: #f39c12;">🎫 Bye: ${byePlayer}</td>
             </tr>`);
