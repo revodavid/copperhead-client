@@ -1831,15 +1831,37 @@ function updateObserverInfo() {
         <h3>👁️ Observer Mode</h3>
         <div class="instruction-section">
             <h4>Controls</h4>
-            <div class="key-row"><span class="key">↑</span> Previous match</div>
-            <div class="key-row"><span class="key">↓</span> Next match</div>
-            <div class="key-row"><span class="key">Esc</span> or <span class="key">\`</span> Return to lobby</div>
+            <div class="key-row clickable-control" onclick="observerPrevMatch()"><span class="key">↑</span> Previous match</div>
+            <div class="key-row clickable-control" onclick="observerNextMatch()"><span class="key">↓</span> Next match</div>
+            <div class="key-row clickable-control" onclick="returnToEntryScreen()"><span class="key">Esc</span> or <span class="key">\`</span> Return to lobby</div>
         </div>
         <div class="instruction-section">
             <h4>Current Round Matches</h4>
             ${matchesTableHtml}
         </div>
     `;
+}
+
+function observerPrevMatch() {
+    if (!isObserver || activeRooms.length <= 1) return;
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
+    currentRoomIndex = (currentRoomIndex - 1 + activeRooms.length) % activeRooms.length;
+    const newRoom = activeRooms[currentRoomIndex];
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "switch_room", room_id: newRoom.room_id }));
+    }
+}
+
+function observerNextMatch() {
+    if (!isObserver || activeRooms.length <= 1) return;
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
+    currentRoomIndex = (currentRoomIndex + 1) % activeRooms.length;
+    const newRoom = activeRooms[currentRoomIndex];
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "switch_room", room_id: newRoom.room_id }));
+    }
 }
 
 function restorePlayerInstructions() {
