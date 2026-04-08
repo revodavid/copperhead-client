@@ -516,7 +516,7 @@ function updateEntryScreenStatus(statusData) {
         }
         
         // Add Bye row if there's a bye player this round
-        if (byePlayer && compState === "in_progress") {
+        if (byePlayer && (compState === "in_progress" || compState === "paused")) {
             rows.push(`<tr class="bye-row">
                 <td colspan="4" style="text-align: center; color: #f39c12;">🎫 Bye: ${byePlayer}</td>
             </tr>`);
@@ -651,6 +651,9 @@ function updateCompetitionDisplay(compData) {
             if (resetIn > 0) {
                 competitionRoundInfo.innerHTML += `<br><span style="font-size: 0.85em; color: #888;">Next tournament in: ${resetIn}s</span>`;
             }
+        } else if (compData.state === "paused") {
+            stopLocalCountdown();
+            competitionRoundInfo.textContent = `Round ${round} Ready to Start`;
         } else {
             stopLocalCountdown();
             competitionRoundInfo.textContent = `Round ${round} in Progress`;
@@ -1042,6 +1045,10 @@ function handleMessage(data) {
             
             // If we were following a winner and this is a new round, find their room
             if (observerFollowingPlayer && observerMatchComplete) {
+                if (activeRooms.length === 0) {
+                    // No rooms yet — tournament is paused between rounds
+                    setStatus(`Match complete: ${observerFollowingPlayer} advances! Waiting for next round to be started`, "victory");
+                } else {
                 const winnerRoom = activeRooms.find(r => 
                     r.names && (r.names[1] === observerFollowingPlayer || r.names[2] === observerFollowingPlayer)
                 );
@@ -1070,6 +1077,7 @@ function handleMessage(data) {
                     const p1 = firstRoom.names?.[1] || "Player 1";
                     const p2 = firstRoom.names?.[2] || "Player 2";
                     setStatus(`${byePlayerName} has a Bye. Watching: ${p1} vs ${p2}`, "playing");
+                }
                 }
             } else {
                 currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
@@ -1248,6 +1256,8 @@ function handleMessage(data) {
             // Show bye status if this player has a bye
             if (!isObserver && data.bye_player && data.bye_player === playerName) {
                 setStatus(`You have a bye this round. Waiting for next round to begin`, "victory");
+            } else if (data.state === "paused") {
+                setStatus(`Tournament paused. Waiting for next round to be started`, "waiting");
             } else {
                 setStatus(`Round ${currentRound} of ${totalRounds}`, "waiting");
             }
@@ -1821,15 +1831,37 @@ function updateObserverInfo() {
         <h3>👁️ Observer Mode</h3>
         <div class="instruction-section">
             <h4>Controls</h4>
-            <div class="key-row"><span class="key">↑</span> Previous match</div>
-            <div class="key-row"><span class="key">↓</span> Next match</div>
-            <div class="key-row"><span class="key">Esc</span> or <span class="key">\`</span> Return to lobby</div>
+            <div class="key-row clickable-control" onclick="observerPrevMatch()"><span class="key">↑</span> Previous match</div>
+            <div class="key-row clickable-control" onclick="observerNextMatch()"><span class="key">↓</span> Next match</div>
+            <div class="key-row clickable-control" onclick="returnToEntryScreen()"><span class="key">Esc</span> or <span class="key">\`</span> Return to lobby</div>
         </div>
         <div class="instruction-section">
             <h4>Current Round Matches</h4>
             ${matchesTableHtml}
         </div>
     `;
+}
+
+function observerPrevMatch() {
+    if (!isObserver || activeRooms.length <= 1) return;
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
+    currentRoomIndex = (currentRoomIndex - 1 + activeRooms.length) % activeRooms.length;
+    const newRoom = activeRooms[currentRoomIndex];
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "switch_room", room_id: newRoom.room_id }));
+    }
+}
+
+function observerNextMatch() {
+    if (!isObserver || activeRooms.length <= 1) return;
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
+    currentRoomIndex = (currentRoomIndex + 1) % activeRooms.length;
+    const newRoom = activeRooms[currentRoomIndex];
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "switch_room", room_id: newRoom.room_id }));
+    }
 }
 
 function restorePlayerInstructions() {
