@@ -831,7 +831,8 @@ input[type="range"] {
     margin: 4px 0 0 0;
     color: #aaa;
     font-size: 0.85em;
-    padding-bottom: 0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
 }
 }
 
@@ -839,7 +840,7 @@ input[type="range"] {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    margin-top: 5px;
+    margin-top: 8px;
 }
 
 #observer-right-panel {
