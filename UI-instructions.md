@@ -1,8 +1,8 @@
 # Instructions for building Client UI
 
-## Lobby screen
+## Entry screen
 
-Also referred to as the "Entry Screen", this screen appears when first launching the client.
+This screen appears when first launching the client.
 
 *This page has two modes: Administrator and Player. In Player mode, the UI allows a human player to join a lobby and play games, or to observe games in progress. In Administrator mode, the UI additionally allows the server owner skip the lobby to join the tournament, and to manage players in the lobby, and add bots to the competition.*
 
@@ -199,23 +199,45 @@ Header: Same as play screen.
 
 Below, the observer screen is divided into three columns with the same layout and styling as the Game Screen:
 
-### Scoreboard (left, narrow)
+### Scoreboard and Round Info (left, narrow)
 
-Identical to Play Game screen, showing scores for observed game.
+This column replaces the Play Game scoreboard with a combined view showing:
+
+1. **Score table**: Identical to Play Game screen, showing scores for observed game.
+
+2. **Points to win**: "First to **N** wins" (where N is highlighted in orange).
+
+3. **Round heading**: "Round X of Y" with a separator line below.
+
+4. **Round table**: Same match table as the Entry Screen showing all matches in the current round with player names and current scores. The currently-observed match is highlighted. Scores for active matches are in orange; completed matches show the winner's score in green. The score column never wraps (always displays on one line, e.g. "2 - 1").
+
+5. **Controls**:
+   - ↑ ↓ Next / Previous Match (clickable)
+   - Esc or \` Return to Entry Screen (clickable)
 
 ### Gamefield grid (center, wide)
 
-Identical to Play Game screen, showing gamefield for the observed game. (The user can switch between games in the round. If the game has ended, show the final state and score.)
+Identical to Play Game screen, showing gamefield for the observed game. If the game has ended, show the final state and score.
 
-### Instructions panel (right, narrow)
+### Right panel
 
-Controls: Same styling as Play Game screen, but with keybindings for observer mode:
- - Up: Previous match
- - Down: Next match
- - ESC: Return to Lobby 
+For administrators: Show the Lobby panel (same as Entry Screen) with player list, Admit/Kick buttons, and Add Bot controls.
 
-Current round matches: Include the same table from the Entry Screen in the current round of the competition, with player names and current scores. (Do not include the round number, which is already shown in the left pane.)
+For non-administrators: Show the Instructions panel (same as Play Game screen) with observer keybindings.
 
-Make this column wide enough to show the full match table without horizontal scrolling or wrapping.
+### Observer Behavior: Follow States
 
+The observer has two follow states:
+
+**FOLLOWING_ENABLED** (default): Active whenever watching a live game.
+- The center pane always shows an active game.
+- When the observed match completes, the observer automatically switches to another active match in the round (if any remain).
+- When a new round begins, the observer follows the winning player from the last-observed match to their new game.
+
+**FOLLOWING_DISABLED**: Activated when the observer manually navigates (↑/↓) to a completed match.
+- The status bar shows "Match complete: [winner] wins!".
+- The observer stays on that completed game until one of the following occurs:
+  - The observer navigates to an active game → returns to FOLLOWING_ENABLED
+  - The next round begins → follows the winning player to their new game → returns to FOLLOWING_ENABLED
+  - A new tournament begins → selects a random active game → returns to FOLLOWING_ENABLED
 

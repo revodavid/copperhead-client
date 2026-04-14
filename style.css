@@ -11,7 +11,8 @@ body {
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: 30px;
 }
 
 #container {
@@ -144,8 +145,6 @@ h1 {
 
 #competition-matches {
     margin-bottom: 15px;
-    max-height: 150px;
-    overflow-y: auto;
 }
 
 #competition-matches .matches-table {
@@ -259,7 +258,6 @@ button:disabled {
 
 #status.victory {
     color: #f1c40f;  /* Gold - celebration */
-    font-weight: bold;
 }
 
 #status.error {
@@ -609,6 +607,7 @@ input[type="range"] {
     text-align: center;
     font-weight: bold;
     color: #f39c12;
+    white-space: nowrap;
 }
 
 /* Lobby panel styles */

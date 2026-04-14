@@ -1021,7 +1021,17 @@ function handleMessage(data) {
             if (gameState && gameState.running) {
                 setStatus(`Game in progress: ${p1Name} vs ${p2Name}`, "playing");
             } else {
-                setStatus(`Waiting for match to begin...`, "waiting");
+                // Check if the match is complete (a player reached pointsToWin)
+                const ptw = serverSettings.pointsToWin || 5;
+                const p1W = wins[1] || wins["1"] || 0;
+                const p2W = wins[2] || wins["2"] || 0;
+                if (p1W >= ptw) {
+                    setStatus(`${p1Name} wins the match! Waiting for next round to begin.`, "victory");
+                } else if (p2W >= ptw) {
+                    setStatus(`${p2Name} wins the match! Waiting for next round to begin.`, "victory");
+                } else {
+                    setStatus(`Waiting for match to begin...`, "waiting");
+                }
             }
             updateCanvas();
             updateScores();
@@ -1052,8 +1062,12 @@ function handleMessage(data) {
             // If we were following a winner and this is a new round, find their room
             if (observerFollowingPlayer && observerMatchComplete) {
                 if (activeRooms.length === 0) {
-                    // No rooms yet — tournament is paused between rounds
-                    setStatus(`Match complete: ${observerFollowingPlayer} advances! Waiting for next round to be started`, "victory");
+                    // No rooms yet — check if tournament is over or just paused between rounds
+                    if (currentRound >= totalRounds) {
+                        setStatus(`🏆 Tournament complete! Champion: ${observerFollowingPlayer}!`, "victory");
+                    } else {
+                        setStatus(`Match complete: ${observerFollowingPlayer} advances! Waiting for next round to be started`, "victory");
+                    }
                 } else {
                 const winnerRoom = activeRooms.find(r => 
                     r.names && (r.names[1] === observerFollowingPlayer || r.names[2] === observerFollowingPlayer)
@@ -1086,8 +1100,15 @@ function handleMessage(data) {
                 }
                 }
             } else {
-                currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
-                if (currentRoomIndex < 0) currentRoomIndex = 0;
+                // Only update room index if our current room is no longer in the list
+                const stillValid = activeRooms.some(r => r.room_id === roomId);
+                if (!stillValid) {
+                    currentRoomIndex = activeRooms.findIndex(r => r.room_id === data.current_room);
+                    if (currentRoomIndex < 0) currentRoomIndex = 0;
+                    if (activeRooms.length > 0) {
+                        roomId = activeRooms[currentRoomIndex].room_id;
+                    }
+                }
             }
             updateObserverInfo();
             updateMatchInfo();
@@ -1244,12 +1265,23 @@ function handleMessage(data) {
             competitionState = data.state;
             currentRound = data.round || 0;
             totalRounds = data.total_rounds || 1;
+            // New tournament or round — reset follow state
+            observerFollowingPlayer = null;
+            observerMatchComplete = false;
             if (data.pairings) {
                 activeRooms = data.pairings.map(p => ({
                     room_id: p.arena,
                     names: { 1: p.player1.name, 2: p.player2.name },
                     wins: { 1: 0, 2: 0 }
                 }));
+                // Select a random active game to watch
+                if (isObserver && activeRooms.length > 0) {
+                    currentRoomIndex = Math.floor(Math.random() * activeRooms.length);
+                    roomId = activeRooms[currentRoomIndex].room_id;
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ action: "switch_room", room_id: roomId }));
+                    }
+                }
             }
             updateMatchInfo();
             updateObserverInfo();
@@ -1862,17 +1894,19 @@ function updateObserverInfo() {
         ${matchesTableHtml}
         <div class="observer-controls">
             <div class="key-row"><span class="key clickable-control" onclick="observerPrevMatch()">↑</span> <span class="key clickable-control" onclick="observerNextMatch()">↓</span> Next / Previous Match</div>
-            <div class="key-row clickable-control" onclick="returnToEntryScreen()"><span class="key">Esc</span> or <span class="key">\`</span> Return to lobby</div>
+            <div class="key-row clickable-control" onclick="returnToEntryScreen()"><span class="key">Esc</span> or <span class="key">\`</span> Return to Entry Screen</div>
         </div>
     `;
 }
 
 function observerPrevMatch() {
     if (!isObserver || activeRooms.length <= 1) return;
-    observerFollowingPlayer = null;
-    observerMatchComplete = false;
     currentRoomIndex = (currentRoomIndex - 1 + activeRooms.length) % activeRooms.length;
     const newRoom = activeRooms[currentRoomIndex];
+    roomId = newRoom.room_id;
+    // Manual navigation disables auto-follow
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action: "switch_room", room_id: newRoom.room_id }));
     }
@@ -1880,10 +1914,12 @@ function observerPrevMatch() {
 
 function observerNextMatch() {
     if (!isObserver || activeRooms.length <= 1) return;
-    observerFollowingPlayer = null;
-    observerMatchComplete = false;
     currentRoomIndex = (currentRoomIndex + 1) % activeRooms.length;
     const newRoom = activeRooms[currentRoomIndex];
+    roomId = newRoom.room_id;
+    // Manual navigation disables auto-follow
+    observerFollowingPlayer = null;
+    observerMatchComplete = false;
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action: "switch_room", room_id: newRoom.room_id }));
     }
@@ -2118,7 +2154,8 @@ async function startTournament() {
         });
         
         if (!response.ok) {
-            alert('Failed to start tournament');
+            const err = await response.json().catch(() => null);
+            alert('Failed to start tournament: ' + (err?.detail || response.statusText));
         }
         // Server will handle starting the tournament
     } catch (e) {
@@ -2268,6 +2305,16 @@ function isMatchComplete(room) {
     const s1 = room.wins?.[1] || 0;
     const s2 = room.wins?.[2] || 0;
     return s1 >= ptw || s2 >= ptw;
+}
+
+function getMatchWinnerName(room) {
+    // Return the name of the winner, or null if the match isn't complete
+    const ptw = serverSettings.pointsToWin || 5;
+    const s1 = room.wins?.[1] || 0;
+    const s2 = room.wins?.[2] || 0;
+    if (s1 >= ptw) return room.names?.[1] || "Player 1";
+    if (s2 >= ptw) return room.names?.[2] || "Player 2";
+    return null;
 }
 
 function hideObserverPanels() {
