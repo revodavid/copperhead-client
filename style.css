@@ -813,7 +813,7 @@ input[type="range"] {
 #observer-left-content {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 4px;
 }
 
 #observer-left-content .observer-points-to-win {
@@ -828,11 +828,11 @@ input[type="range"] {
 }
 
 #observer-left-content .observer-round-heading {
-    margin: 0;
+    margin: 4px 0 0 0;
     color: #aaa;
     font-size: 0.85em;
-    border-bottom: 1px solid #333;
-    padding-bottom: 5px;
+    padding-bottom: 0;
+}
 }
 
 #observer-left-content .observer-controls {
