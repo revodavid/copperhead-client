@@ -619,11 +619,19 @@ input[type="range"] {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px;
+    padding: 6px 8px;
     margin: 4px 0;
     background: #1a1a2e;
     border-radius: 4px;
     gap: 8px;
+}
+
+.lobby-player-item .player-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .lobby-player-assigned {
@@ -635,14 +643,21 @@ input[type="range"] {
     color: #aaa;
 }
 
+.lobby-btn-group {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
 .btn-kick {
     background: #e74c3c;
     color: white;
     border: none;
     padding: 4px 8px;
-    font-size: 0.8em;
+    font-size: 0.75em;
     border-radius: 3px;
     cursor: pointer;
+    min-width: 38px;
 }
 
 .btn-kick:hover {
@@ -654,9 +669,10 @@ input[type="range"] {
     color: white;
     border: none;
     padding: 4px 8px;
-    font-size: 0.8em;
+    font-size: 0.75em;
     border-radius: 3px;
     cursor: pointer;
+    min-width: 48px;
 }
 
 .btn-add-to-slot:hover:not(:disabled) {

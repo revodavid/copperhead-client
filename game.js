@@ -1969,10 +1969,13 @@ function updateLobbyPanel() {
         
         const nameSpan = document.createElement('span');
         nameSpan.textContent = player.name || 'Unknown';
-        nameSpan.className = player.in_slot ? 'lobby-player-assigned' : 'lobby-player-waiting';
+        nameSpan.className = 'player-name ' + (player.in_slot ? 'lobby-player-assigned' : 'lobby-player-waiting');
         item.appendChild(nameSpan);
         
         if (isAdmin()) {
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'lobby-btn-group';
+            
             const addBtn = document.createElement('button');
             addBtn.textContent = 'Admit';
             addBtn.className = 'btn-add-to-slot';
@@ -1984,8 +1987,9 @@ function updateLobbyPanel() {
             kickBtn.className = 'btn-kick';
             kickBtn.onclick = () => lobbyKick(player.uid);
             
-            item.appendChild(addBtn);
-            item.appendChild(kickBtn);
+            btnGroup.appendChild(addBtn);
+            btnGroup.appendChild(kickBtn);
+            item.appendChild(btnGroup);
         }
         
         list.appendChild(item);
