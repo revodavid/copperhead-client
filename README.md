@@ -1,6 +1,6 @@
 # CopperHead Client
 
-Version: 4.0.8
+Version: 4.1.0
 
 Web-based client for the CopperHead 2-player Snake game.
 
@@ -26,7 +26,7 @@ To play a game, you will need to connect to a running CopperHead server from the
 
 ## Quick Start 
 
-See [CopperHead Server](../copperhead-server/) repository
+See [CopperHead Server](https://github.com/revodavid/copperhead-server) repository
 
 1. Start the CopperHead server (via Codespaces or locally)
 2. Open the client in a browser (GitHub Pages or locally)
