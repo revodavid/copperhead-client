@@ -813,14 +813,14 @@ input[type="range"] {
 #observer-left-content {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 #observer-left-content .observer-points-to-win {
     text-align: center;
     color: #aaa;
     font-size: 0.85em;
-    margin: -4px 0 6px 0;
+    margin: 0 0 8px 0;
 }
 
 #observer-left-content .observer-points-to-win span {
