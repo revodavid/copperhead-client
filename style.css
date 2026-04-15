@@ -11,7 +11,8 @@ body {
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: 30px;
 }
 
 #container {
@@ -144,8 +145,6 @@ h1 {
 
 #competition-matches {
     margin-bottom: 15px;
-    max-height: 150px;
-    overflow-y: auto;
 }
 
 #competition-matches .matches-table {
@@ -259,7 +258,6 @@ button:disabled {
 
 #status.victory {
     color: #f1c40f;  /* Gold - celebration */
-    font-weight: bold;
 }
 
 #status.error {
@@ -609,6 +607,7 @@ input[type="range"] {
     text-align: center;
     font-weight: bold;
     color: #f39c12;
+    white-space: nowrap;
 }
 
 /* Lobby panel styles */
@@ -620,11 +619,19 @@ input[type="range"] {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px;
+    padding: 6px 8px;
     margin: 4px 0;
     background: #1a1a2e;
     border-radius: 4px;
     gap: 8px;
+}
+
+.lobby-player-item .player-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .lobby-player-assigned {
@@ -636,14 +643,21 @@ input[type="range"] {
     color: #aaa;
 }
 
+.lobby-btn-group {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
 .btn-kick {
     background: #e74c3c;
     color: white;
     border: none;
     padding: 4px 8px;
-    font-size: 0.8em;
+    font-size: 0.75em;
     border-radius: 3px;
     cursor: pointer;
+    min-width: 38px;
 }
 
 .btn-kick:hover {
@@ -655,9 +669,10 @@ input[type="range"] {
     color: white;
     border: none;
     padding: 4px 8px;
-    font-size: 0.8em;
+    font-size: 0.75em;
     border-radius: 3px;
     cursor: pointer;
+    min-width: 48px;
 }
 
 .btn-add-to-slot:hover:not(:disabled) {
@@ -807,4 +822,208 @@ input[type="range"] {
 
 .note a:hover {
     color: #e67e22;
+}
+
+/* Observer mode panels */
+#observer-left-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#observer-left-content .observer-points-to-win {
+    text-align: center;
+    color: #aaa;
+    font-size: 0.85em;
+    margin: -8px 0 12px 0;
+}
+
+#observer-left-content .observer-points-to-win span {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+#observer-left-content .observer-round-heading {
+    margin: 4px 0 0 0;
+    color: #aaa;
+    font-size: 0.85em;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+
+#observer-left-content .observer-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 24px;
+}
+
+#observer-right-panel {
+    background: #0f0f23;
+    border: 2px solid #333;
+    border-radius: 5px;
+    padding: 15px;
+    min-width: 200px;
+    max-width: 280px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#observer-right-panel h3 {
+    margin: 0;
+    color: #f39c12;
+    text-align: center;
+}
+
+#observer-right-panel .obs-lobby-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#observer-right-panel .obs-lobby-player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: #1a1a2e;
+    border-radius: 4px;
+    gap: 8px;
+}
+
+#observer-right-panel .obs-lobby-player .player-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#observer-right-panel .obs-lobby-assigned {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+#observer-right-panel .obs-lobby-waiting {
+    color: #aaa;
+}
+
+#observer-right-panel .obs-btn-group {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+#observer-right-panel .obs-btn-admit {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    font-size: 0.75em;
+    border-radius: 3px;
+    cursor: pointer;
+    min-width: 48px;
+}
+
+#observer-right-panel .obs-btn-admit:hover:not(:disabled) {
+    background: #1e8449;
+}
+
+#observer-right-panel .obs-btn-admit:disabled {
+    background: #555;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+#observer-right-panel .obs-btn-kick {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    font-size: 0.75em;
+    border-radius: 3px;
+    cursor: pointer;
+    min-width: 38px;
+}
+
+#observer-right-panel .obs-btn-kick:hover {
+    background: #c0392b;
+}
+
+#observer-right-panel .obs-admin-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    margin-top: 5px;
+    border-top: 1px solid #333;
+    padding-top: 10px;
+}
+
+#observer-right-panel .obs-admin-controls button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: white;
+}
+
+#observer-right-panel .obs-btn-start {
+    background: #27ae60;
+}
+
+#observer-right-panel .obs-btn-start:hover:not(:disabled) {
+    background: #1e8449;
+}
+
+#observer-right-panel .obs-btn-start:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+#observer-right-panel .obs-btn-pause {
+    background: #e67e22;
+}
+
+#observer-right-panel .obs-btn-pause:hover {
+    background: #d35400;
+}
+
+#observer-right-panel .obs-pause-controls {
+    display: flex;
+    gap: 8px;
+}
+
+#observer-right-panel .obs-btn-resume {
+    background: #27ae60;
+    flex: 1;
+}
+
+#observer-right-panel .obs-btn-resume:hover {
+    background: #219a52;
+}
+
+#observer-right-panel .obs-btn-cancel {
+    background: #e74c3c;
+    flex: 1;
+}
+
+#observer-right-panel .obs-btn-cancel:hover {
+    background: #c0392b;
+}
+
+#observer-right-panel .obs-lobby-status {
+    font-size: 0.8em;
+    color: #aaa;
+    text-align: center;
+}
+
+#observer-right-panel .obs-no-players {
+    font-size: 0.85em;
+    color: #666;
+    text-align: center;
+    padding: 10px;
 }

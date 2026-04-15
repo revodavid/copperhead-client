@@ -1,6 +1,6 @@
 # CopperHead Client
 
-Version: 4.0.7
+Version: 4.1.0
 
 Web-based client for the CopperHead 2-player Snake game.
 
@@ -14,8 +14,6 @@ You can play CopperHead versus friends or a bot by visiting this client hosted o
 
 To play a game, you will need to connect to a running CopperHead server from the client. For instructions on starting a server, visit the [CopperHead Server](../copperhead-server/) repository.
 
-> ⚠️ **VPN Warning:** If you are connected via a VPN, you may experience latency/lag that affects gameplay. For the best experience, disconnect from your VPN before playing.
-
 ## Client Features
 
 - Play against another player or a bot with keyboard controls
@@ -26,7 +24,7 @@ To play a game, you will need to connect to a running CopperHead server from the
 
 ## Quick Start 
 
-See [CopperHead Server](../copperhead-server/) repository
+See [CopperHead Server](https://github.com/revodavid/copperhead-server) repository
 
 1. Start the CopperHead server (via Codespaces or locally)
 2. Open the client in a browser (GitHub Pages or locally)
@@ -59,6 +57,23 @@ When launching a server in Codespaces, the terminal will display a ready-to-use 
 - **Arrow keys** or **WASD**: Move snake
 - **Space**: Ready up / Restart
 - **ESC** or **`** (backtick): Return to setup
+
+### Observer Controls
+
+- **↑ / ↓**: Switch between matches in the current round
+- **ESC** or **`** (backtick): Return to Entry Screen
+
+## Administrator Mode
+
+The server owner can access Administrator Mode by including the `admin` token in the client URL (e.g. `?admin=abc123`). The admin token is displayed in the server console when the server starts.
+
+In Administrator Mode, the client provides additional controls:
+
+- **Lobby management**: Admit or kick players from the lobby
+- **Add bots**: Add CopperBot opponents at a specific difficulty level (1–10) or random
+- **Start tournament**: Manually start the tournament, optionally auto-filling empty slots with lobby players and bots; on success the admin client switches straight into Observe mode
+- **Pause / Resume / Cancel**: Control a running tournament
+- **Observe mode**: The right panel shows lobby status with admin controls (Admit/Kick players, Add Bot) in addition to the lobby list visible to all observers
 
 ## Credits
 
