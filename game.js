@@ -2145,7 +2145,7 @@ async function lobbyAddToSlot(uid) {
     }
 }
 
-async function startTournament() {
+async function startTournament(switchToObserve = false) {
     if (!isAdmin() || !adminToken) return;
     
     const baseUrl = getServerUrl();
@@ -2160,8 +2160,12 @@ async function startTournament() {
         if (!response.ok) {
             const err = await response.json().catch(() => null);
             alert('Failed to start tournament: ' + (err?.detail || response.statusText));
+            return;
         }
-        // Server will handle starting the tournament
+
+        if (switchToObserve) {
+            observe();
+        }
     } catch (e) {
         alert('Error starting tournament: ' + e.message);
     }
@@ -2175,7 +2179,7 @@ async function handleCompetitionButton() {
     if (compState === "in_progress") {
         await pauseTournament();
     } else {
-        await startTournament();
+        await startTournament(true);
     }
 }
 
