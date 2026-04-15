@@ -2,10 +2,14 @@
 
 All notable changes to the CopperHead Client are documented in this file.
 
-## [4.1.0] - 2026-04-14
+## [v4.1.0] - 2026-04-14
 
 ### Changed
 - Version bump to 4.1.0
+- After a successful admin start request, the client can switch directly into observe mode
+
+### Fixed
+- Start flow now stops immediately when the start-tournament request returns an error
 
 ## [4.0.7] - 2026-04-02
 

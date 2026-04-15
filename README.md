@@ -71,7 +71,7 @@ In Administrator Mode, the client provides additional controls:
 
 - **Lobby management**: Admit or kick players from the lobby
 - **Add bots**: Add CopperBot opponents at a specific difficulty level (1–10) or random
-- **Start tournament**: Manually start the tournament, optionally auto-filling empty slots with lobby players and bots
+- **Start tournament**: Manually start the tournament, optionally auto-filling empty slots with lobby players and bots; on success the admin client switches straight into Observe mode
 - **Pause / Resume / Cancel**: Control a running tournament
 - **Observe mode**: The right panel shows lobby status with admin controls (Admit/Kick players, Add Bot) in addition to the lobby list visible to all observers
 
